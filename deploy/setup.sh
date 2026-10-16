@@ -27,6 +27,7 @@ fi
 # nginx: only this site, no access logs (the privacy notice promises that)
 install -d -m 755 /srv/jotiglobe
 [ -e /srv/jotiglobe/index.html ] || echo '<!doctype html><title>JotiGlobe</title><p>Not deployed yet.</p>' >/srv/jotiglobe/index.html
+install -d -m 755 /etc/nginx/jotiglobe.d
 install -m 644 "$HERE/nginx-jotiglobe.conf" /etc/nginx/sites-available/jotiglobe
 ln -sf /etc/nginx/sites-available/jotiglobe /etc/nginx/sites-enabled/jotiglobe
 rm -f /etc/nginx/sites-enabled/default
