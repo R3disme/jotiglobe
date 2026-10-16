@@ -12,6 +12,8 @@
 	import X from '@lucide/svelte/icons/x';
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
 	import Loader from '@lucide/svelte/icons/loader-circle';
+	import GitFork from '@lucide/svelte/icons/git-fork';
+	import List from '@lucide/svelte/icons/list';
 
 	// --- data ---------------------------------------------------------------------------------
 	let groups = $state<Group[]>([]);
@@ -49,7 +51,13 @@
 	let selected = $state<string | null>(null);
 	let focused = $state<Group | null>(null);
 	let view = $state<'countries' | 'near'>('countries');
-	let sheetOpen = $state(false); // mobile bottom sheet
+	let sheetOpen = $state(false); // mobile bottom sheet: expanded or not
+	let panelOpen = $state(true); // closed = just the globe
+
+	// picking a country on the globe brings the list back
+	$effect(() => {
+		if (selected) panelOpen = true;
+	});
 
 	const filteredCountries = $derived(
 		countryList.filter((c) => (region === 'All' || c.region === region) && c.name.toLowerCase().includes(query.trim().toLowerCase()))
@@ -110,6 +118,7 @@
 				selected = null;
 				view = 'near';
 				sheetOpen = true;
+				panelOpen = true;
 			},
 			(err) => {
 				locating = false;
@@ -171,6 +180,14 @@
 				Forget my location
 			</button>
 		{/if}
+		<a
+			href="https://github.com/R3disme/jotiglobe"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-sand pointer-events-auto mt-3 flex w-fit items-center gap-2 rounded-md border border-white/20 bg-black/25 px-3 py-2 text-sm backdrop-blur transition hover:border-white/40 hover:bg-black/40"
+		>
+			<GitFork class="size-4" /> Open source on GitHub
+		</a>
 		{#if locError}
 			<p class="pointer-events-auto mt-2 max-w-xs rounded-md bg-black/40 px-3 py-2 text-xs text-red-200 backdrop-blur">{locError}</p>
 		{/if}
@@ -182,21 +199,34 @@
 			'bg-forest-900/92 absolute z-20 flex flex-col border-white/10 shadow-2xl backdrop-blur-md transition-transform duration-300',
 			'inset-x-0 bottom-0 h-[55dvh] rounded-t-2xl border-t',
 			'md:inset-x-auto md:top-4 md:right-4 md:bottom-4 md:h-auto md:w-[23rem] md:translate-y-0 md:rounded-xl md:border',
-			sheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3.5rem)]'
+			sheetOpen ? 'translate-y-0' : 'translate-y-[calc(100%-3.5rem)]',
+			!panelOpen && 'pointer-events-none translate-y-full opacity-0 md:translate-x-[calc(100%+2rem)] md:translate-y-0'
 		)}
+		inert={!panelOpen}
 		aria-label="Countries and groups"
 	>
-		<button
-			type="button"
-			class="flex h-14 shrink-0 items-center justify-between gap-2 px-5 text-left md:hidden"
-			onclick={() => (sheetOpen = !sheetOpen)}
-			aria-expanded={sheetOpen}
-		>
-			<span class="font-heading font-semibold">
-				{selected ? names[selected] : view === 'near' && me ? 'Groups near you' : 'Browse countries'}
-			</span>
-			<ChevronUp class={cn('size-5 transition-transform', sheetOpen && 'rotate-180')} />
-		</button>
+		<div class="flex h-14 shrink-0 items-center gap-1 border-white/10 pr-2 pl-5 md:h-11 md:border-b md:pl-4">
+			<button
+				type="button"
+				class="flex h-full flex-1 items-center justify-between gap-2 text-left md:pointer-events-none"
+				onclick={() => (sheetOpen = !sheetOpen)}
+				aria-expanded={sheetOpen}
+			>
+				<span class="font-heading font-semibold md:text-sm">
+					{selected ? names[selected] : view === 'near' && me ? 'Groups near you' : 'Browse countries'}
+				</span>
+				<ChevronUp class={cn('size-5 transition-transform md:hidden', sheetOpen && 'rotate-180')} />
+			</button>
+			<button
+				type="button"
+				onclick={() => (panelOpen = false)}
+				class="text-sand/60 hover:text-sand grid size-9 place-items-center rounded-md hover:bg-white/10"
+				aria-label="Hide the list"
+				title="Hide the list"
+			>
+				<X class="size-4" />
+			</button>
+		</div>
 
 		{#if selected}
 			<!-- Country detail -->
@@ -350,16 +380,25 @@
 			<a href="https://www.jotajoti.info/directory" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">directory on jotajoti.info</a>{snapshot ? ` (${snapshot})` : ''}.
 			Locations are guessed from the town name, so some dots are a bit off.
 			<button type="button" onclick={() => (privacyOpen = true)} class="hover:text-sand underline underline-offset-2">Privacy</button> ·
-			<a href="#about" onclick={(e) => (e.preventDefault(), (aboutOpen = !aboutOpen))} class="hover:text-sand underline underline-offset-2">Sources</a>
+			<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">Source code</a> ·
+			<a href="#about" onclick={(e) => (e.preventDefault(), (aboutOpen = !aboutOpen))} class="hover:text-sand underline underline-offset-2">Credits</a>
 			{#if aboutOpen}
 				<span class="mt-1 block">
 					Map: Natural Earth via world-atlas · Places: GeoNames (CC BY 4.0) · Countries: mledoze/countries (ODbL) · Flags: flag-icons (MIT).
 					Made by 1st Sandnes Scout Group, Norway. Not affiliated with WOSM or the JOTA-JOTI organisers.
-					Source code: <a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">github.com/R3disme/jotiglobe</a>.
 				</span>
 			{/if}
 		</footer>
 	</aside>
+	{#if !panelOpen}
+		<button
+			type="button"
+			onclick={() => ((panelOpen = true), (sheetOpen = true))}
+			class="bg-forest-900/90 text-sand absolute right-4 bottom-4 z-20 flex items-center gap-2 rounded-md border border-white/15 px-4 py-2.5 text-sm font-medium shadow-lg backdrop-blur hover:bg-forest-800 md:top-4 md:bottom-auto"
+		>
+			<List class="size-4" /> Show list
+		</button>
+	{/if}
 </div>
 
 <PrivacyNotice bind:open={privacyOpen} />

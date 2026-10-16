@@ -3,6 +3,8 @@
 A globe of the scout groups signed up for JOTA-JOTI, made by 1st Sandnes Scout Group. It runs in the browser
 and stores nothing about visitors.
 
+Website: https://jotiglobe.narluga-tuna.ts.net
+
 The public website "JotiGlobe" is not updated solely from this repo. I update it manually, for security.
 
 ```sh

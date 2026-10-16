@@ -55,6 +55,10 @@
 				the pages. My server doesn't keep visitor logs.
 			</li>
 			<li>Double-clicking a group opens its page on jotajoti.info, which has its own privacy policy.</li>
+			<li>
+				JotiGlobe is open source, so you can check all of this yourself. The code is on GitHub:
+				<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="font-medium underline underline-offset-2">github.com/R3disme/jotiglobe</a>.
+			</li>
 		</ul>
 		<div class="mt-6 flex items-center justify-between gap-4">
 			<p class="text-forest-950/60 text-sm">– 1st Sandnes Scout Group, Norway</p>
