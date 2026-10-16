@@ -1,0 +1,43 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/figtree';
+@import '@fontsource-variable/roboto-slab';
+
+@theme {
+	--font-sans: 'Figtree Variable', ui-sans-serif, system-ui, sans-serif;
+	--font-heading: 'Roboto Slab Variable', ui-serif, Georgia, serif;
+	--color-forest-950: #0a140e;
+	--color-forest-900: #0e1b14;
+	--color-forest-800: #13241a;
+	--color-forest-700: #1b3123;
+	--color-forest-600: #22402d;
+	--color-moss: #7fb48d;
+	--color-ochre: #ecc15a;
+	--color-sky: #5e9bc4;
+	--color-sand: #f5f1e8;
+	--color-fixed-light: #f5f1e8;
+	--color-fixed-dark: #0e1b14;
+}
+
+html,
+body {
+	height: 100%;
+	background: var(--color-forest-950);
+	color: var(--color-sand);
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	overscroll-behavior: none;
+}
+h1,
+h2,
+h3 {
+	font-family: var(--font-heading);
+	letter-spacing: -0.01em;
+}
+dialog::backdrop {
+	background: rgb(0 0 0 / 0.6);
+	backdrop-filter: blur(2px);
+}
+.scrollbar-thin {
+	scrollbar-width: thin;
+	scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
