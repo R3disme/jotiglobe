@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jotiglobe.narluga-tuna.ts.net/sitemap.xml
