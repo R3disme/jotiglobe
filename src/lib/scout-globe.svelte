@@ -12,6 +12,7 @@
 	import Minus from '@lucide/svelte/icons/minus';
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { cn } from './utils';
+	import { countryName } from './data';
 
 	type CountryFeature = Feature<Geometry, { cc: string | null }>;
 
@@ -366,7 +367,7 @@
 		const cc = countryAt(p);
 		if (cc) {
 			const n = groupsByCc.get(cc) ?? 0;
-			hover = { x: p.x, y: p.y, title: names[cc] ?? cc, sub: n ? `${n} ${n === 1 ? 'group' : 'groups'}` : 'No registered groups' };
+			hover = { x: p.x, y: p.y, title: `${names[cc] ?? countryName(cc)} | ${cc}`, sub: n ? `${n} ${n === 1 ? 'group' : 'groups'}` : 'No registered groups' };
 		} else hover = null;
 		hoverCc = cc;
 	}

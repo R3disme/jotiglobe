@@ -1,4 +1,6 @@
 export const route = $state({ path: location.pathname, search: location.search });
+// keep in step with vite.config.ts and deploy/nginx-jotiglobe.conf
+export const appRoute = /^\/(?:stats|groups\/[^/]+|countries\/[A-Za-z]{2})?\/?$/;
 
 // anonymous page view count, see the privacy notice
 function countView(path: string, entry = false) {
@@ -37,7 +39,7 @@ addEventListener('click', (e) => {
 	if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
 	const a = (e.target as Element | null)?.closest?.('a');
 	if (!a || a.target || a.hasAttribute('download') || a.origin !== location.origin) return;
-	if (/^\/(data|flags)\//.test(a.pathname) || /\.\w+$/.test(a.pathname)) return;
+	if (!appRoute.test(a.pathname)) return;
 	e.preventDefault();
 	navigate(a.href);
 });

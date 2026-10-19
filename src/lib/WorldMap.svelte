@@ -96,7 +96,7 @@
 			style:left="{hover.x}px"
 			style:top="{hover.y}px"
 		>
-			<div class="font-semibold">{countryName(hover.cc)}</div>
+			<div class="font-semibold">{countryName(hover.cc)} | {hover.cc}</div>
 			<div class="text-fixed-dark/65">{values.get(hover.cc) ? `${fmtSum(values.get(hover.cc)!, !!approx?.has(hover.cc))} ${unit}` : `No ${unit}`}</div>
 		</div>
 	{/if}

@@ -9,7 +9,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 export DEBIAN_FRONTEND=noninteractive
 
 apt-get update -qq
-apt-get install -y -qq nginx curl ca-certificates >/dev/null
+apt-get install -y -qq nginx libnginx-mod-http-brotli-static curl ca-certificates >/dev/null
 
 if ! command -v tailscale >/dev/null; then
 	. /etc/os-release
