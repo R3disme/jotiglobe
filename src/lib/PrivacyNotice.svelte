@@ -40,7 +40,7 @@
 	<div class="max-h-[85dvh] overflow-y-auto px-6 py-6 sm:px-8">
 		<h2 id="privacy-title" class="text-xl font-semibold">Before you look around</h2>
 		<p class="mt-3 text-[15px] leading-relaxed">
-			This map shows the scout groups signed up for JOTA-JOTI 2026, taken from the public group directory on jotajoti.info.
+			This map shows the scout groups signed up for JOTA-JOTI, taken from the public group directory on jotajoti.info.
 			A few things about privacy:
 		</p>
 		<ul class="mt-3 list-disc space-y-2 pl-5 text-[15px] leading-relaxed">
@@ -54,7 +54,7 @@
 				The site is reached through Tailscale Funnel. Tailscale passes the encrypted connection on, so they see your IP address but not
 				the pages. My server doesn't keep visitor logs.
 			</li>
-			<li>Double-clicking a group opens its page on jotajoti.info, which has its own privacy policy.</li>
+			<li>Each group's page links to its profile on jotajoti.info, which has its own privacy policy.</li>
 			<li>
 				JotiGlobe is open source, so you can check all of this yourself. The code is on GitHub:
 				<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="font-medium underline underline-offset-2">github.com/R3disme/jotiglobe</a>.

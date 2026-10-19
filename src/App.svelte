@@ -2,12 +2,14 @@
 	import { onMount, tick } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
 	import PrivacyNotice from './lib/PrivacyNotice.svelte';
-	import { loadGroups, groupUrl, countryName, countryRegion, distanceKm } from './lib/data';
+	import { loadYears, loadGroups, groupPath, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
+	import { route, navigate, setParams } from './lib/router.svelte';
 	import { cn } from './lib/utils';
 	import Search from '@lucide/svelte/icons/search';
 	import MapPin from '@lucide/svelte/icons/map-pin';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
-	import ExternalLink from '@lucide/svelte/icons/external-link';
+	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import ChartBar from '@lucide/svelte/icons/chart-bar';
 	import LocateFixed from '@lucide/svelte/icons/locate-fixed';
 	import X from '@lucide/svelte/icons/x';
 	import ChevronUp from '@lucide/svelte/icons/chevron-up';
@@ -20,11 +22,16 @@
 	let snapshot = $state('');
 	let loading = $state(true);
 	let loadError = $state(false);
+	let year = $state<YearInfo | null>(null);
 	onMount(async () => {
 		try {
-			const d = await loadGroups();
+			// the globe always shows the newest year; older years are on /stats
+			year = (await loadYears())[0];
+			const d = await loadGroups(year.year);
 			groups = d.groups;
-			snapshot = new Date(d.snapshot).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+			snapshot = fmtDate(d.snapshot);
+			const cc = new URLSearchParams(route.search).get('country')?.toUpperCase();
+			if (cc && groups.some((g) => g.cc === cc)) pickCountry(cc);
 		} catch {
 			loadError = true;
 		}
@@ -72,7 +79,11 @@
 		groupQuery = '';
 	});
 
-	const openProfile = (g: Group) => window.open(groupUrl(g.id), '_blank', 'noopener,noreferrer');
+	const openGroup = (g: Group) => navigate(groupPath(g));
+	// the chosen country is kept in the URL, so links can point at it and "back" from a group page returns to it
+	$effect(() => {
+		if (!loading) setParams({ country: selected });
+	});
 	function pickCountry(cc: string) {
 		focused = null;
 		selected = cc;
@@ -146,12 +157,12 @@
 </svelte:head>
 
 <div class="relative h-dvh w-full overflow-hidden">
-	<ScoutGlobe {groups} {names} {me} bind:selected bind:focused onopen={openProfile} class="absolute inset-0" />
+	<ScoutGlobe {groups} {names} {me} bind:selected bind:focused onopen={openGroup} class="absolute inset-0" />
 
 	<!-- Title + stats -->
 	<header class="pointer-events-none absolute top-0 left-0 z-10 max-w-[calc(100%-2rem)] p-4 sm:p-6">
 		<h1 class="text-3xl leading-tight font-semibold sm:text-4xl">JotiGlobe</h1>
-		<p class="text-sand/70 mt-1 text-sm">Scout groups signed up for JOTA-JOTI, 16–18 October 2026</p>
+		<p class="text-sand/70 mt-1 text-sm">Scout groups signed up for JOTA-JOTI{year ? `, ${fmtWeekend(year)}` : ''}</p>
 		<div class="mt-4 flex gap-6">
 			{#if loading}
 				<div class="h-10 w-52 animate-pulse rounded-md bg-white/10"></div>
@@ -180,6 +191,12 @@
 				Forget my location
 			</button>
 		{/if}
+		<a
+			href="/stats"
+			class="text-sand pointer-events-auto mt-3 flex w-fit items-center gap-2 rounded-md border border-white/20 bg-black/25 px-3 py-2 text-sm backdrop-blur transition hover:border-white/40 hover:bg-black/40"
+		>
+			<ChartBar class="size-4" /> Statistics
+		</a>
 		<a
 			href="https://github.com/R3disme/jotiglobe"
 			target="_blank"
@@ -241,7 +258,7 @@
 						<p class="text-sand/60 text-sm">{perCountry.get(selected)?.length ?? 0} registered groups</p>
 					</div>
 				</div>
-				<p class="text-sand/50 text-xs">Click a group to find it on the map, double-click to open its page on jotajoti.info.</p>
+				<p class="text-sand/50 text-xs">Click a group to find it on the map, then open its page for the JID and a link to jotajoti.info.</p>
 				<label class="relative block">
 					<Search class="text-sand/40 pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
 					<input bind:value={groupQuery} placeholder="Search groups or places" class="placeholder:text-sand/40 focus:border-moss w-full rounded-md border border-white/10 bg-white/5 py-2 pr-3 pl-9 text-sm outline-none" />
@@ -254,12 +271,12 @@
 							role="button"
 							tabindex="0"
 							onclick={() => (focused = g)}
-							ondblclick={() => openProfile(g)}
+							ondblclick={() => openGroup(g)}
 							onkeydown={(e) => {
-								if (e.key === 'Enter') focused?.id === g.id ? openProfile(g) : (focused = g);
+								if (e.key === 'Enter') focused?.id === g.id ? openGroup(g) : (focused = g);
 								if (e.key === ' ') (e.preventDefault(), (focused = g));
 							}}
-							title="Double-click to open the group profile"
+							title="Double-click to open the group page"
 							class={cn(
 								'group/row flex cursor-pointer items-start gap-2 rounded-md px-3 py-2 transition-colors outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-moss/60',
 								focused?.id === g.id && 'bg-moss/15'
@@ -272,14 +289,15 @@
 								</span>
 							</span>
 							<a
-								href={groupUrl(g.id)}
-								target="_blank"
-								rel="noopener noreferrer"
+								href={groupPath(g)}
 								onclick={(e) => e.stopPropagation()}
-								class="text-sand/50 hover:text-sand mt-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100"
-								aria-label="Open the profile of {g.name} on jotajoti.info"
+								class={cn(
+									'text-sand/45 hover:text-sand -my-1 inline-flex shrink-0 items-center gap-0.5 rounded-md px-1.5 py-1 text-xs hover:bg-white/10',
+									focused?.id === g.id && 'bg-moss text-forest-950 hover:bg-moss hover:text-forest-950 font-semibold'
+								)}
+								aria-label="Open the page of {g.name}"
 							>
-								<ExternalLink class="size-3.5" />
+								{#if focused?.id === g.id}Group page{/if}<ChevronRight class="size-4" />
 							</a>
 						</div>
 					</li>
@@ -317,9 +335,9 @@
 								role="button"
 								tabindex="0"
 								onclick={() => (focused = g)}
-								ondblclick={() => openProfile(g)}
-								onkeydown={(e) => e.key === 'Enter' && (focused?.id === g.id ? openProfile(g) : (focused = g))}
-								title="Double-click to open the group profile"
+								ondblclick={() => openGroup(g)}
+								onkeydown={(e) => e.key === 'Enter' && (focused?.id === g.id ? openGroup(g) : (focused = g))}
+								title="Double-click to open the group page"
 								class={cn(
 									'flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 transition-colors outline-none hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-moss/60',
 									focused?.id === g.id && 'bg-moss/15'
@@ -331,6 +349,14 @@
 									<span class="text-sand/55 block truncate text-xs">{g.city || names[g.cc]}{g.approx ? ' · approximate' : ''}</span>
 								</span>
 								<span class="text-sand/60 shrink-0 text-xs tabular-nums">{fmtKm(km)}</span>
+								<a
+									href={groupPath(g)}
+									onclick={(e) => e.stopPropagation()}
+									class="text-sand/45 hover:text-sand -my-1 grid shrink-0 place-items-center rounded-md p-1 hover:bg-white/10"
+									aria-label="Open the page of {g.name}"
+								>
+									<ChevronRight class="size-4" />
+								</a>
 							</div>
 						</li>
 					{/each}
@@ -380,6 +406,7 @@
 			<a href="https://www.jotajoti.info/directory" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">directory on jotajoti.info</a>{snapshot ? ` (${snapshot})` : ''}.
 			Locations are guessed from the town name, so some dots are a bit off.
 			<button type="button" onclick={() => (privacyOpen = true)} class="hover:text-sand underline underline-offset-2">Privacy</button> ·
+			<a href="/stats" class="hover:text-sand underline underline-offset-2">Statistics</a> ·
 			<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">Source code</a> ·
 			<a href="#about" onclick={(e) => (e.preventDefault(), (aboutOpen = !aboutOpen))} class="hover:text-sand underline underline-offset-2">Credits</a>
 			{#if aboutOpen}

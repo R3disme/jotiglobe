@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
-// Geocodes scripts/.cache/groups-raw.json with GeoNames (CC-BY 4.0) → public/data/groups.json
-// Usage: node scripts/geocode-groups.mjs
+// Geocodes scripts/.cache/groups-raw.json with GeoNames (CC-BY 4.0) → public/data/<year>/groups.json, and lists the year
+// in public/data/years.json. Usage: node scripts/geocode-groups.mjs [year]   (default: this year)
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { geoContains, geoBounds, geoCentroid, geoArea } = require('d3-geo');
@@ -94,4 +94,17 @@ for (const g of raw) {
   out.push([g.id, g.name.normalize('NFKC'), titleCase(city), cc, +lat.toFixed(3), +lon.toFixed(3), ap ? 1 : 0]);
 }
 console.log('groups', raw.length, 'placed', out.length, 'city-matched', hit, 'approx', approx, 'no-country', [...nocc]);
-fs.writeFileSync('public/data/groups.json', JSON.stringify({ snapshot: new Date().toISOString().slice(0, 10), fields: ['id', 'name', 'city', 'cc', 'lat', 'lon', 'approx'], groups: out }));
+const year = +(process.argv[2] ?? new Date().getUTCFullYear());
+fs.mkdirSync(`public/data/${year}`, { recursive: true });
+fs.writeFileSync(`public/data/${year}/groups.json`, JSON.stringify({ snapshot: new Date().toISOString().slice(0, 10), fields: ['id', 'name', 'city', 'cc', 'lat', 'lon', 'approx'], groups: out }));
+// a new year starts out with the third weekend of October; fix the dates in years.json if JOTA-JOTI moves
+const yf = 'public/data/years.json';
+const years = fs.existsSync(yf) ? JSON.parse(fs.readFileSync(yf, 'utf8')).years : [];
+if (!years.some(y => y.year === year)) {
+  const d = new Date(Date.UTC(year, 9, 1)); while (d.getUTCDay() !== 5) d.setUTCDate(d.getUTCDate() + 1); d.setUTCDate(d.getUTCDate() + 14);
+  const start = d.toISOString().slice(0, 10); d.setUTCDate(d.getUTCDate() + 2);
+  years.push({ year, start, end: d.toISOString().slice(0, 10) });
+  years.sort((a, b) => a.year - b.year);
+  fs.writeFileSync(yf, JSON.stringify({ years }) + '\n');
+  console.log('added', year, 'to', yf);
+}
