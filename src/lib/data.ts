@@ -93,6 +93,7 @@ export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lo
 	return 2 * 6371 * Math.asin(Math.sqrt(h));
 }
 
+export const SITE = 'https://jotiglobe.narluga-tuna.ts.net';
 export const fmt = (n: number) => n.toLocaleString('en-GB');
 // the directory doesn't take more than 1,000 participants per group
 export const fmtParticipants = (n: number) => (n >= 1000 ? '1,000+' : fmt(n));

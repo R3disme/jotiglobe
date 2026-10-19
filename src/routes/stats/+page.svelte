@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Group } from './lib/scout-globe.svelte';
-	import WorldMap from './lib/WorldMap.svelte';
+	import type { Group } from '#lib/scout-globe.svelte';
+	import WorldMap from '#lib/WorldMap.svelte';
+	import Seo from '#lib/Seo.svelte';
 	import {
 		loadYears,
 		loadGroups,
@@ -17,9 +18,11 @@
 		fmtWeekend,
 		type YearInfo,
 		type Profile
-	} from './lib/data';
-	import { route, setParams } from './lib/router.svelte';
-	import { cn } from './lib/utils';
+	} from '#lib/data.ts';
+	import { route, setParams } from '#lib/router.svelte.ts';
+	import { cn } from '#lib/utils.ts';
+
+	let { data } = $props();
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Search from '@lucide/svelte/icons/search';
 	import Loader from '@lucide/svelte/icons/loader-circle';
@@ -262,9 +265,13 @@
 	const pickMetric = (v: Metric) => setParams({ by: v === 'participants' ? null : v });
 </script>
 
-<svelte:head>
-	<title>{country ? `${countryName(country)} – ` : ''}{year ? `JOTA-JOTI ${year} statistics` : 'Statistics'} – JotiGlobe</title>
-</svelte:head>
+<Seo
+	title="{country ? `${countryName(country)} – ` : ''}JOTA-JOTI {year ?? data.summary?.year.year ?? ''} statistics | JotiGlobe"
+	description={data.summary
+		? `JOTA-JOTI ${data.summary.year.year} in numbers: ${fmt(data.summary.groups)} scout groups and ${fmt(data.summary.participants)} participants in ${data.summary.countries} countries, by country, region, town and organisation.`
+		: 'JOTA-JOTI statistics: scout groups and participants by country, region, town and organisation.'}
+	path="/stats"
+/>
 
 {#snippet card(title: string, note: string, body: import('svelte').Snippet)}
 	<section class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
@@ -362,7 +369,23 @@
 		{#if loadError}
 			<p class="rounded-md bg-red-950/40 px-4 py-3 text-sm text-red-200">Could not load the statistics. Please reload the page.</p>
 		{:else if !all || !yearInfo || !cur}
-			<div class="text-sand/60 flex items-center gap-2 py-20 text-sm"><Loader class="size-4 animate-spin" /> Loading…</div>
+			{#if data.summary}
+				{@const sm = data.summary}
+				<div class="space-y-3">
+					<h2 class="text-xl font-semibold">JOTA-JOTI {sm.year.year} in numbers</h2>
+					<p class="text-sand/75">
+						{fmt(sm.groups)} scout groups with {fmt(sm.participants)} participants in {sm.countries} countries signed up for JOTA-JOTI {fmtWeekend(sm.year)}.
+					</p>
+					<ol class="text-sand/70 grid gap-x-6 text-sm sm:grid-cols-2">
+						{#each sm.top as t, i (t.cc)}
+							<li><a href="/countries/{t.cc}" class="hover:underline">{i + 1}. {t.name}</a>: {fmt(t.participants)} participants in {fmt(t.groups)} groups</li>
+						{/each}
+					</ol>
+					<p class="text-sand/50 flex items-center gap-2 pt-4 text-sm"><Loader class="size-4 animate-spin" /> Loading the charts…</p>
+				</div>
+			{:else}
+				<div class="text-sand/60 flex items-center gap-2 py-20 text-sm"><Loader class="size-4 animate-spin" /> Loading…</div>
+			{/if}
 		{:else if country && !s}
 			<div class="py-10">
 				<p class="text-sand/70">No groups from {countryName(country)} in {year}.</p>
