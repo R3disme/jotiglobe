@@ -33,14 +33,21 @@
 			loading = false;
 		}
 	});
-	let participants = $state(new Map<number, number>()); // directory id → participants, when the year has profiles
+	let participants = $state(new Map<number, number>());
+	let participantsYear = 0;
+	$effect(() => {
+		const y = year?.year;
+		if (!y || !selected || participantsYear === y) return;
+		participantsYear = y;
+		participants = new Map();
+		loadProfiles(y).then((p) => year?.year === y && (participants = new Map([...p].map(([id, x]) => [id, x.participants ?? 0]))));
+	}); // directory id → participants, when the year has profiles
 	let firstLoad = true;
 	$effect(() => {
 		const y = year?.year;
 		if (y == null) return;
 		let stale = false;
 		loading = true;
-		loadProfiles(y).then((p) => !stale && (participants = new Map([...p].map(([id, x]) => [id, x.participants ?? 0]))));
 		loadGroups(y)
 			.then((d) => {
 				if (stale) return;
@@ -315,7 +322,7 @@
 			</button>
 			<button
 				type="button"
-				onclick={() => (panelOpen = false)}
+				onclick={() => ((panelOpen = false), (focused = null), (selected = null))}
 				class="text-sand/60 hover:text-sand grid size-9 place-items-center rounded-md hover:bg-white/10"
 				aria-label="Hide the list"
 				title="Hide the list"

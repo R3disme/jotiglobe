@@ -13,6 +13,8 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { cn } from './utils';
 	import { countryName } from './data';
+	import atlasUrl from '../assets/flags.webp';
+	import atlas from './flag-atlas.json';
 
 	type CountryFeature = Feature<Geometry, { cc: string | null }>;
 
@@ -124,6 +126,41 @@
 		}
 		return i;
 	}
+
+	const loadTopo = (file: string) =>
+		fetch(file)
+			.then((r) => r.json())
+			.then((t: Topology) => (feature(t, t.objects.countries) as unknown as FeatureCollection<Geometry, { cc: string | null }>).features as CountryFeature[]);
+	let highRequested = false;
+	function loadHigh() {
+		highRequested = true;
+		loadTopo('/data/countries-50m.json').then((f) => {
+			high = f;
+			detailed = true;
+		});
+	}
+
+	let atlasImg: HTMLImageElement | null = null;
+	const [tileW, tileH] = atlas.tile;
+	const atlasIndex: Record<string, number> = atlas.index;
+	// where to look on the flag when it's cropped: [x, y] in 0..1
+	const flagFit: Record<string, [number, number]> = {
+		NO: [0.37, 0.5], SE: [0.37, 0.5], FI: [0.36, 0.5], DK: [0.37, 0.5], IS: [0.36, 0.5], FO: [0.36, 0.5],
+		CL: [0.17, 0.25], US: [0.5, 0.3], GR: [0.2, 0.3], MY: [0.25, 0.3], TW: [0.25, 0.25]
+	};
+	function coverRect(cc: string, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) {
+		const bw = x1 - x0,
+			bh = y1 - y0;
+		const sc = Math.max(bw / 4, bh / 3);
+		const W = 4 * sc,
+			H = 3 * sc;
+		const [fx, fy] = flagFit[cc] ?? [0.5, 0.5];
+		const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+		return { x: clamp(x0 + bw / 2 - fx * W, x1 - W, x0), y: clamp(y0 + bh / 2 - fy * H, y1 - H, y0), w: W, h: H };
+	}
+
+	// 0 = full, 1 = lower resolution, 2 = plain dots, no background flags, 30 fps
+	let quality = 0;
 
 	function findFeature(cc: string | null) {
 		if (!cc) return undefined;
@@ -391,16 +428,32 @@
 		g.fillRect(0, 0, 32, 32);
 	}
 
+	let lastKey = '';
 	function draw(ctx: CanvasRenderingContext2D, dt: number) {
+		const _selected = selected;
+		const _focused = focused;
+		const _groupsByCc = groupsByCc;
+		const _dots = dots;
+		const _me = me;
+		const _highlight = highlight;
+		const _autoSpin = autoSpin;
+		const _spinSpeed = spinSpeed;
+		const _idleMs = idleMs;
 		const { w, h } = size;
-		if (autoSpin && !selected && !dragging && !reducedMotion && performance.now() - lastInteraction > 2500) target.λ += spinSpeed * dt;
-		if (!selected && !dragging && performance.now() - lastInteraction > idleMs) target.k = 1;
+		if (!highRequested && (target.k > 2 || _selected)) loadHigh();
+		const spinning = _autoSpin && !_selected && !dragging && !reducedMotion && performance.now() - lastInteraction > 2500;
+		if (spinning) target.λ += _spinSpeed * dt;
+		if (!_selected && !dragging && performance.now() - lastInteraction > _idleMs) target.k = 1;
 
 		const ease = 1 - Math.exp(-dt * (reducedMotion ? 30 : 3.2));
 		view.λ += (target.λ - view.λ) * ease;
 		view.φ += (target.φ - view.φ) * ease;
 		view.k += (target.k - view.k) * ease;
-		flagAlpha += ((selected ? (focused ? 0.45 : 0.9) : 0) - flagAlpha) * (1 - Math.exp(-dt * 4));
+		flagAlpha += ((_selected ? (_focused ? 0.45 : 0.9) : 0) - flagAlpha) * (1 - Math.exp(-dt * 4));
+		// nothing moved or changed: keep the last frame
+		const key = `${view.λ.toFixed(2)} ${view.φ.toFixed(2)} ${view.k.toFixed(3)} ${w}x${h} ${hoverCc} ${_selected} ${flagAlpha.toFixed(2)} ${_dots.length} ${!!atlasImg} ${high.length} ${low.length} ${quality}`;
+		if (key === lastKey && !_focused && !_me) return false;
+		lastKey = key;
 
 		const r0 = Math.min(w, h) * 0.44;
 		projection.translate([w / 2, h / 2]).scale(r0 * view.k).rotate([view.λ, view.φ]);
@@ -446,11 +499,14 @@
 			active = new Path2D(),
 			hovered = new Path2D();
 		const pathP = geoPath(projection);
+		const shapes: [CountryFeature, Path2D][] = [];
 		for (const f of features) {
 			const cc = f.properties.cc;
 			const d = pathP(f);
 			if (!d) continue;
-			(cc && cc === hoverCc ? hovered : cc && groupsByCc.has(cc) ? active : others).addPath(new Path2D(d));
+			const p2 = new Path2D(d);
+			shapes.push([f, p2]);
+			(cc && cc === hoverCc ? hovered : cc && _groupsByCc.has(cc) ? active : others).addPath(p2);
 		}
 		ctx.fillStyle = '#18291f';
 		ctx.fill(others);
@@ -464,19 +520,38 @@
 		ctx.stroke(active);
 		ctx.stroke(hovered);
 
-		// selected country: flag clipped to its outline
-		const sel = findFeature(selected) ?? (flagAlpha > 0.01 ? findFeature(lastSelected) : undefined);
-		if (selected) lastSelected = selected;
+		const settled = !spinning && !dragging && Math.abs(target.λ - view.λ) + Math.abs(target.φ - view.φ) < 0.05 && Math.abs(target.k - view.k) < 0.01;
+		if (atlasImg && (quality < 2 || settled)) {
+			const bounds = pathP.bounds;
+			ctx.globalAlpha = _selected ? 0.18 : view.k > 2 ? 0.6 : 0.42;
+			for (const [f, p2] of shapes) {
+				const cc = f.properties.cc;
+				if (!cc || cc === _selected || !_groupsByCc.has(cc) || atlasIndex[cc] == null) continue;
+				const b = bounds(flagAreas(f).main);
+				if (!isFinite(b[0][0]) || b[1][0] - b[0][0] < 4) continue;
+				const r = coverRect(cc, b);
+				const i = atlasIndex[cc];
+				ctx.save();
+				ctx.clip(p2);
+				ctx.drawImage(atlasImg, (i % atlas.cols) * tileW, Math.floor(i / atlas.cols) * tileH, tileW, tileH, r.x, r.y, r.w, r.h);
+				ctx.restore();
+			}
+			ctx.globalAlpha = 1;
+			ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+			ctx.lineWidth = 1;
+			ctx.stroke(hovered);
+		}
+
+		// _selected country: flag clipped to its outline
+		const sel = findFeature(_selected) ?? (flagAlpha > 0.01 ? findFeature(lastSelected) : undefined);
+		if (_selected) lastSelected = _selected;
 		if (sel && flagAlpha > 0.01) {
 			const img = flag(sel.properties.cc!);
 			if (img) {
 				const areas = flagAreas(sel);
 				const bounds = geoPath(projection).bounds;
-				const drawFlag = (shape: CountryFeature, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) => {
-					const bw = x1 - x0,
-						bh = y1 - y0;
-					const s = Math.max(bw / 4, bh / 3);
-					const r = { x: x0 + (bw - 4 * s) / 2, y: y0 + (bh - 3 * s) / 2, w: 4 * s, h: 3 * s };
+				const drawFlag = (shape: CountryFeature, b: [[number, number], [number, number]]) => {
+					const r = coverRect(sel.properties.cc!, b);
 					ctx.save();
 					ctx.beginPath();
 					path(shape);
@@ -502,42 +577,46 @@
 			ctx.stroke();
 		}
 
-		// group dots (front hemisphere only)
-		const λ0 = -view.λ * rad,
-			φ0 = -view.φ * rad;
-		const cx = Math.cos(φ0) * Math.cos(λ0),
-			cy = Math.cos(φ0) * Math.sin(λ0),
-			cz = Math.sin(φ0);
+		// group _dots (front hemisphere only)
+		// same as projection() for each dot, without the trigonometry
+		const cl = Math.cos(view.λ * rad),
+			sl = Math.sin(view.λ * rad),
+			cp = Math.cos(view.φ * rad),
+			sp = Math.sin(view.φ * rad);
+		const [tx, ty] = projection.translate(),
+			sc = projection.scale();
 		const base = Math.max(5, Math.min(14, 4 + view.k * 1.2));
 		ctx.globalCompositeOperation = 'lighter';
-		for (const d of dots) {
-			const facing = d.x * cx + d.y * cy + d.z * cz;
+		for (const d of _dots) {
+			const x0 = d.x * cl - d.y * sl,
+				y0 = d.x * sl + d.y * cl;
+			const facing = x0 * cp - d.z * sp;
 			d.vis = facing > 0.03;
 			if (!d.vis) continue;
-			const p = projection([d.g.lon, d.g.lat]);
-			if (!p) {
-				d.vis = false;
+			d.px = tx + sc * y0;
+			d.py = ty - sc * (d.z * cp + x0 * sp);
+			if (d.px < -20 || d.py < -20 || d.px > w + 20 || d.py > h + 20) continue;
+			if (_selected && d.g.cc === _selected) continue; // drawn solid below, on top of the flag
+			ctx.globalAlpha = _selected ? 0.25 : 0.95;
+			if (quality >= 2) {
+				ctx.fillStyle = '#ecc15a';
+				ctx.fillRect(d.px - 1, d.py - 1, 2, 2);
 				continue;
 			}
-			d.px = p[0];
-			d.py = p[1];
-			if (d.px < -20 || d.py < -20 || d.px > w + 20 || d.py > h + 20) continue;
-			if (selected && d.g.cc === selected) continue; // drawn solid below, on top of the flag
-			const s = (selected ? base * 0.6 : base) * (0.55 + 0.45 * Math.min(1, facing * 3));
-			ctx.globalAlpha = selected ? 0.25 : 0.95;
+			const s = (_selected ? base * 0.6 : base) * (0.55 + 0.45 * Math.min(1, facing * 3));
 			ctx.drawImage(glow, d.px - s / 2, d.py - s / 2, s, s);
 		}
 		ctx.globalAlpha = 1;
 		ctx.globalCompositeOperation = 'source-over';
 
-		// groups in the selected country: solid pins with a dark ring so they read on top of any flag
-		if (selected) {
+		// groups in the _selected country: solid pins with a dark ring so they read on top of any flag
+		if (_selected) {
 			const pr = Math.max(2.5, Math.min(5, 1.5 + view.k * 0.25));
 			ctx.fillStyle = '#ecc15a';
 			ctx.strokeStyle = 'rgba(14, 27, 20, 0.85)';
 			ctx.lineWidth = 1.5;
-			for (const d of dots) {
-				if (!d.vis || d.g.cc !== selected) continue;
+			for (const d of _dots) {
+				if (!d.vis || d.g.cc !== _selected) continue;
 				ctx.beginPath();
 				ctx.arc(d.px, d.py, pr, 0, Math.PI * 2);
 				ctx.fill();
@@ -545,10 +624,10 @@
 			}
 		}
 
-		// focused group: pulsing ring
-		if (focused) {
-			const p = projection([focused.lon, focused.lat]);
-			const front = geoDistance([focused.lon, focused.lat], [-view.λ, -view.φ]) < Math.PI / 2;
+		// _focused group: pulsing ring
+		if (_focused) {
+			const p = projection([_focused.lon, _focused.lat]);
+			const front = geoDistance([_focused.lon, _focused.lat], [-view.λ, -view.φ]) < Math.PI / 2;
 			if (p && front) {
 				const t = (performance.now() / 1000) % 1.6 / 1.6;
 				ctx.beginPath();
@@ -566,9 +645,9 @@
 		}
 
 		// the viewer's position: blue dot + accuracy halo
-		if (me) {
-			const p = projection([me.lon, me.lat]);
-			const front = geoDistance([me.lon, me.lat], [-view.λ, -view.φ]) < Math.PI / 2;
+		if (_me) {
+			const p = projection([_me.lon, _me.lat]);
+			const front = geoDistance([_me.lon, _me.lat], [-view.λ, -view.φ]) < Math.PI / 2;
 			if (p && front) {
 				const t = ((performance.now() / 1000) % 2) / 2;
 				ctx.beginPath();
@@ -586,9 +665,9 @@
 		}
 
 		// highlighted group
-		if (highlight) {
-			for (const d of dots) {
-				if (!d.vis || d.g.name !== highlight) continue;
+		if (_highlight) {
+			for (const d of _dots) {
+				if (!d.vis || d.g.name !== _highlight) continue;
 				const pr = Math.max(4, Math.min(7, 3 + view.k * 0.3));
 				ctx.beginPath();
 				ctx.arc(d.px, d.py, pr + 3, 0, Math.PI * 2);
@@ -610,6 +689,7 @@
 		ctx.strokeStyle = 'rgba(94, 155, 196, 0.45)';
 		ctx.lineWidth = 1;
 		ctx.stroke();
+		return true;
 	}
 	let lastSelected: string | null = null;
 	let atm: CanvasGradient | null = null;
@@ -623,40 +703,60 @@
 			prev = performance.now(),
 			alive = true;
 
-		const ro = new ResizeObserver(() => {
+		const resize = () => {
+			projection.precision(quality >= 1 ? 1.5 : 0.6);
+			lastKey = '';
 			const r = wrap.getBoundingClientRect();
-			const dpr = Math.min(2, devicePixelRatio || 1);
+			const dpr = quality >= 1 ? 1 : Math.min(2, devicePixelRatio || 1);
 			size = { w: r.width, h: r.height };
 			canvas.width = Math.round(r.width * dpr);
 			canvas.height = Math.round(r.height * dpr);
 			ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-		});
+		};
+		const ro = new ResizeObserver(resize);
 		ro.observe(wrap);
 
-		const load = (file: string) =>
-			fetch(file)
-				.then((r) => r.json())
-				.then((t: Topology) => (feature(t, t.objects.countries) as unknown as FeatureCollection<Geometry, { cc: string | null }>).features);
-		load('/data/countries-110m.json').then((f) => {
-			low = f;
-			ready = true;
-			load('/data/countries-50m.json').then((f) => {
-				high = f;
-				const have = new Set(low.map((x) => x.properties.cc));
-				low = [...low, ...f.filter((x) => x.properties.cc && !have.has(x.properties.cc))];
-				detailed = true;
-			});
-		});
+		Promise.all([loadTopo('/data/countries-110m.json'), fetch('/data/countries-extra.json').then((r) => r.json() as Promise<FeatureCollection<Geometry, { cc: string | null }>>)]).then(
+			([f, extra]) => {
+				low = [...f, ...(extra.features as CountryFeature[])];
+				ready = true;
+			}
+		);
+		const img = new Image();
+		img.onload = () => (atlasImg = img);
+		img.src = atlasUrl;
 
 		let onScreen = true;
 		const io = new IntersectionObserver(([e]) => (onScreen = e.isIntersecting));
 		io.observe(wrap);
+		// slow machine: step the quality down, and back up once it keeps up again
+		let cost = 0,
+			interval = 16,
+			changed = 0,
+			started = performance.now(),
+			odd = false;
 		const loop = (now: number) => {
 			if (!alive) return;
-			const dt = Math.min(0.05, (now - prev) / 1000);
-			prev = now;
-			if (size.w && low.length && onScreen && !document.hidden) draw(ctx, dt);
 			raf = requestAnimationFrame(loop);
+			if (quality >= 2 && (odd = !odd)) return;
+			const dt = Math.min(0.1, (now - prev) / 1000);
+			prev = now;
+			if (!size.w || !low.length || !onScreen || document.hidden) return;
+			const t0 = performance.now();
+			if (!draw(ctx, Math.min(dt, 0.05))) return;
+			cost = cost * 0.95 + (performance.now() - t0) * 0.05;
+			interval = interval * 0.95 + dt * 1000 * 0.05;
+			canvas.dataset.cost = cost.toFixed(1);
+			// only steps down, and not while the first frames build their caches, so it never flips back and forth
+			if (now - started < 6000) return;
+			if ((cost > 20 || interval > (quality >= 2 ? 80 : 50)) && quality < 2 && now - changed > 4000) {
+				quality++;
+				changed = now;
+				cost = 0;
+				interval = 16;
+				resize();
+				canvas.dataset.quality = String(quality);
+			}
 		};
 		raf = requestAnimationFrame(loop);
 		canvas.addEventListener('wheel', onWheel, { passive: false });

@@ -39,11 +39,10 @@
 			const t = (await (await fetch(file)).json()) as Topology;
 			return (feature(t, t.objects.countries) as unknown as FeatureCollection<Geometry, { cc: string | null }>).features as CountryFeature[];
 		};
-		const [low, high] = await Promise.all([load('/data/countries-110m.json'), load('/data/countries-50m.json')]);
-		const have = new Set(low.map((f) => f.properties.cc));
+		const [low, extra] = await Promise.all([load('/data/countries-110m.json'), fetch('/data/countries-extra.json').then((r) => r.json())]);
 		shapes = [
 			...low.map((f) => ({ cc: f.properties.cc, d: path(f) ?? '' })),
-			...high.filter((f) => f.properties.cc && !have.has(f.properties.cc)).map((f) => ({ cc: f.properties.cc, d: path(f) ?? '', dot: path.centroid(f) as [number, number] }))
+			...(extra.features as CountryFeature[]).map((f) => ({ cc: f.properties.cc, d: path(f) ?? '', dot: path.centroid(f) as [number, number] }))
 		];
 	});
 
