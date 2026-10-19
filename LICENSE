@@ -1,4 +1,4 @@
-MIT License, with an attribution requirement
+MIT License, with attribution and private-work conditions
 
 Copyright (c) 2026 R3d
 
@@ -9,13 +9,38 @@ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
 furnished to do so, subject to the following conditions:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
 
-Any public use of the Software or of a work based on it, such as a website, app,
-service or distribution, must state visibly that it is based on JotiGlobe, for
-example "Based on JotiGlobe" with a link to https://github.com/R3disme/jotiglobe,
-in a place where its users can see it, such as the footer or an about page.
+2. Attribution. Any public use of the Software or of a work based on it, such
+   as a website, app, service or distribution, must state visibly that it is
+   based on JotiGlobe, for example "Based on JotiGlobe" with a link to
+   https://github.com/R3disme/jotiglobe, in a place where its users can see
+   it, such as the footer or an about page.
+
+3. Private works. A "private work" is any copy, modification or work based on
+   the Software whose source code is not publicly available.
+
+   Anyone who makes a private work must notify R3d of its existence, what it
+   is and why it is private, giving a meaningful reason, by opening an issue
+   at https://github.com/R3disme/jotiglobe/issues (or in another way agreed
+   with R3d). Keeping the code private only to avoid sharing it is not a
+   meaningful reason: R3d may then refuse the private use and ask for the
+   source code to be made public. JotiGlobe was made for all scouts, and we
+   wish that all scouts can continue to enjoy the works made from it.
+
+4. Permitted private works. The organisations below may keep private works
+   without giving a reason. They must still notify R3d of their existence and
+   what they are, as in condition 3. R3d cannot ask them to remove, publish
+   or stop using such a work unless they remove the credit required by
+   conditions 1 and 2. As of 19 October 2026 these are:
+
+   - World Scout Bureau (Bureau Mondial du Scoutisme), the association that
+     organises JOTA-JOTI for the World Organization of the Scout Movement,
+     registered in the Geneva Registry of Commerce, no. CH-660.0.195.970-0,
+     Rue Henri-Christiné 5, CH-1211 Geneva 4, Switzerland.
+   - ScoutWired Online Gaming Association Inc., an incorporated association in
+     Western Australia, ABN 16 624 194 332.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
