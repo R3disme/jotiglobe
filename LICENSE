@@ -1,4 +1,4 @@
-MIT License
+MIT License, with an attribution requirement
 
 Copyright (c) 2026 R3d
 
@@ -11,6 +11,11 @@ furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
+
+Any public use of the Software or of a work based on it, such as a website, app,
+service or distribution, must state visibly that it is based on JotiGlobe, for
+example "Based on JotiGlobe" with a link to https://github.com/R3disme/jotiglobe,
+in a place where its users can see it, such as the footer or an about page.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

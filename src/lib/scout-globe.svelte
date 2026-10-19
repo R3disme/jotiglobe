@@ -148,15 +148,36 @@
 		NO: [0.37, 0.5], SE: [0.37, 0.5], FI: [0.36, 0.5], DK: [0.37, 0.5], IS: [0.36, 0.5], FO: [0.36, 0.5],
 		CL: [0.17, 0.25], US: [0.5, 0.3], GR: [0.2, 0.3], MY: [0.25, 0.3], TW: [0.25, 0.25]
 	};
-	function coverRect(cc: string, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) {
-		const bw = x1 - x0,
-			bh = y1 - y0;
-		const sc = Math.max(bw / 4, bh / 3);
-		const W = 4 * sc,
-			H = 3 * sc;
+	// an area's middle and its real size, so its flag stays put on the land while the globe turns
+	const geoBoxCache = new WeakMap<CountryFeature, { c: [number, number]; w: number; h: number }>();
+	function geoBox(f: CountryFeature) {
+		let g = geoBoxCache.get(f);
+		if (!g) {
+			const c = geoCentroid(f) as [number, number];
+			const [[w, s], [e, n]] = geoBounds(f);
+			const east = e < w ? e + 360 : e;
+			g = { c, w: (east - w) * rad * Math.cos(c[1] * rad), h: (n - s) * rad };
+			geoBoxCache.set(f, g);
+		}
+		return g;
+	}
+	function pinnedRect(cc: string, f: CountryFeature) {
+		const g = geoBox(f);
+		if (geoDistance(g.c, [-view.λ, -view.φ]) > Math.PI / 2 + 0.25) return null;
+		const p = projection(g.c);
+		if (!p) return null;
+		const R = projection.scale();
+		const sc = Math.max((g.w * R) / 4, (g.h * R) / 3);
+		if (sc < 1) return null;
 		const [fx, fy] = flagFit[cc] ?? [0.5, 0.5];
-		const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
-		return { x: clamp(x0 + bw / 2 - fx * W, x1 - W, x0), y: clamp(y0 + bh / 2 - fy * H, y1 - H, y0), w: W, h: H };
+		return { x: p[0] - fx * 4 * sc, y: p[1] - fy * 3 * sc, w: 4 * sc, h: 3 * sc };
+	}
+	/** outlying areas whose middle the main flag doesn't reach (Alaska, Hawaii, Svalbard…) */
+	function outlying(f: CountryFeature, main: { x: number; y: number; w: number; h: number } | null) {
+		return flagAreas(f).rest.filter((a) => {
+			const p = projection(geoBox(a).c);
+			return !main || !p || p[0] < main.x || p[1] < main.y || p[0] > main.x + main.w || p[1] > main.y + main.h;
+		});
 	}
 
 	// 0 = full, 1 = lower resolution, 2 = plain dots, no background flags, 30 fps
@@ -522,23 +543,30 @@
 
 		const settled = !spinning && !dragging && Math.abs(target.λ - view.λ) + Math.abs(target.φ - view.φ) < 0.05 && Math.abs(target.k - view.k) < 0.01;
 		if (atlasImg && (quality < 2 || settled)) {
-			const bounds = pathP.bounds;
+			const img = atlasImg;
 			ctx.globalAlpha = _selected ? 0.18 : view.k > 2 ? 0.6 : 0.42;
+			const paint = (cc: string, shape: CountryFeature, clip: Path2D | null) => {
+				const r = pinnedRect(cc, shape);
+				if (!r) return null;
+				const i = atlasIndex[cc];
+				ctx.save();
+				ctx.clip(clip ?? new Path2D(pathP(shape) ?? ''));
+				ctx.drawImage(img, (i % atlas.cols) * tileW, Math.floor(i / atlas.cols) * tileH, tileW, tileH, r.x, r.y, r.w, r.h);
+				ctx.restore();
+				return r;
+			};
 			for (const [f, p2] of shapes) {
 				const cc = f.properties.cc;
 				if (!cc || cc === _selected || !_groupsByCc.has(cc) || atlasIndex[cc] == null) continue;
-				const b = bounds(flagAreas(f).main);
-				if (!isFinite(b[0][0]) || b[1][0] - b[0][0] < 4) continue;
-				const r = coverRect(cc, b);
-				const i = atlasIndex[cc];
-				ctx.save();
-				ctx.clip(p2);
-				ctx.drawImage(atlasImg, (i % atlas.cols) * tileW, Math.floor(i / atlas.cols) * tileH, tileW, tileH, r.x, r.y, r.w, r.h);
-				ctx.restore();
+				const main = paint(cc, flagAreas(f).main, p2);
+				for (const area of outlying(f, main)) if (geoBox(area).w * projection.scale() > 3) paint(cc, area, null);
 			}
 			ctx.globalAlpha = 1;
-			ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+			// borders on top, so they stay easy to see on any flag
+			ctx.strokeStyle = 'rgba(6, 14, 9, 0.85)';
 			ctx.lineWidth = 1;
+			ctx.stroke(active);
+			ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
 			ctx.stroke(hovered);
 		}
 
@@ -549,25 +577,21 @@
 			const img = flag(sel.properties.cc!);
 			if (img) {
 				const areas = flagAreas(sel);
-				const bounds = geoPath(projection).bounds;
-				const drawFlag = (shape: CountryFeature, b: [[number, number], [number, number]]) => {
-					const r = coverRect(sel.properties.cc!, b);
+				const cc = sel.properties.cc!;
+				const drawFlag = (clip: CountryFeature, pin: CountryFeature) => {
+					const r = pinnedRect(cc, pin);
+					if (!r) return null;
 					ctx.save();
 					ctx.beginPath();
-					path(shape);
+					path(clip);
 					ctx.clip();
 					ctx.drawImage(img, r.x, r.y, r.w, r.h);
 					ctx.restore();
 					return r;
 				};
 				ctx.globalAlpha = flagAlpha;
-				const m = drawFlag(sel, bounds(areas.main));
-				for (const area of areas.rest) {
-					const b = bounds(area);
-					if (!isFinite(b[0][0])) continue; // on the far side
-					const inside = b[0][0] >= m.x && b[0][1] >= m.y && b[1][0] <= m.x + m.w && b[1][1] <= m.y + m.h;
-					if (!inside && b[1][0] - b[0][0] + b[1][1] - b[0][1] > 1) drawFlag(area, b);
-				}
+				const main = drawFlag(sel, areas.main);
+				for (const area of outlying(sel, main)) drawFlag(area, area);
 				ctx.globalAlpha = 1;
 			}
 			ctx.beginPath();

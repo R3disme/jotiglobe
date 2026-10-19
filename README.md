@@ -1,46 +1,46 @@
 # JotiGlobe
 
-A globe of the scout groups signed up for JOTA-JOTI, made by 1st Sandnes Scout Group. It runs in the browser
-and keeps only anonymous usage statistics (pages opened, no IP addresses or browser details, deleted after 30 days).
+An interactive globe of every scout group signed up for JOTA-JOTI, the Jamboree on the Air and Jamboree on the
+Internet. Made by 1st Sandnes Scout Group, Norway.
 
-Website: https://jotiglobe.narluga-tuna.ts.net
+**[Open JotiGlobe →](https://jotiglobe.narluga-tuna.ts.net)**
 
-The public website "JotiGlobe" is not updated solely from this repo. I update it manually, for security.
+## What you can do
 
-```sh
-pnpm install
-pnpm dev
-```
+- **Spin the globe** and see where scout groups take part, with each country's flag and a dot for every group.
+- **Find groups near you.** Your location is only used in your own browser to sort the list.
+- **Browse a country** to see its groups, participants, largest groups and busiest towns.
+- **Open a group's page** for its JID (to connect on JOTI), number of participants and the years it took part.
+- **Explore the statistics**: a world map, WOSM regions, continents, countries, towns, scout organisations and group
+  sizes, by participants or by groups. Every list can be opened full screen.
+- **Pick a year** to look back at earlier JOTA-JOTI weekends as they are added.
+- **Globe mode** shows just the slowly spinning globe, nice on a big screen at your JOTA-JOTI event.
 
-SvelteKit with `adapter-static`: every page is prerendered to `build/` (`pnpm build`), so search engines get real HTML
-and nginx serves plain files. `#lib/*` is `src/lib/*`.
+## Where the data comes from
 
-Pages: `/` the globe (`/?year=2026`, `/?country=NO`), `/stats` (`?year=`, `?country=`, `?by=groups`),
-`/countries/<CC>` one country, `/groups/<name>-<id>` one group across the years, `/sitemap.xml`, `/errors` all error pages.
+The groups come from the public [Scout Group Directory on jotajoti.info](https://www.jotajoti.info/directory). The
+number of participants is what each group gave on its profile, and the directory doesn't take more than 1,000. A
+group's place on the map is guessed from its town name, so some dots are a bit off. JotiGlobe is not an official
+JOTA-JOTI site and is not affiliated with WOSM.
 
-## A new year
+## Privacy
 
-Each JOTA-JOTI year has its own folder in `static/data/<year>/`, listed in `static/data/years.json`. The globe shows
-the newest year unless another is picked; `/stats` and the group pages use them all.
+- No cookies, no tracking and nothing loaded from other websites.
+- The site may keep anonymous usage statistics (which pages are opened and how fast they load), without IP addresses
+  or browser details, deleted after 30 days. They're used to make the site faster and see which parts are used most.
+- Your location, if you share it, never leaves your browser.
 
-```sh
-pnpm data:groups                    # directory → static/data/<this year>/groups.json, adds the year to years.json
-pnpm data:profiles                  # JID, participants, organisation → profiles.json, then keys.json (slow: one page per group)
-```
+## Using JotiGlobe in your own project
 
-Check the weekend dates the script guessed in `years.json`. Groups sign up again every year with a new directory id
-(and often a new JID), so `scripts/link-years.mjs` matches them to earlier years by JID, or by name in the same country,
-and `keys.json` keeps their first id: the group page URL then stays the same.
+You're welcome to. The code is under the MIT licence with one extra condition: anything public that uses JotiGlobe or
+its code must say so where people can see it, for example "Based on JotiGlobe" with a link to this repository. See
+[LICENSE](LICENSE).
 
-## Usage statistics (optional)
+## Contributing or running it yourself
 
-Without `GRAFANA_URL` the site collects nothing and the privacy notice says nothing about it. With it (in `.env` when
-building), each page view sends an anonymous `/hit` that nginx logs without IP, user agent or referrer.
+For information on how to contribute or run JotiGlobe yourself, check out the [docs](docs/README.md).
 
-```sh
-bash deploy/monitoring/setup.sh   # on the server: Prometheus, Loki, Alloy, exporters (30 days)
-GRAFANA_URL=… GRAFANA_TOKEN=… JG_IP=… OWNER=… deploy/monitoring/grafana.sh   # data sources, private folder, dashboard
-```
+## Credits
 
-Changes go through pull requests. Group list from the public directory on jotajoti.info; map data Natural Earth,
-places GeoNames (CC BY 4.0), flags flag-icons (MIT). Code under the MIT licence.
+Map data from Natural Earth (via world-atlas), places from GeoNames (CC BY 4.0), country data from mledoze/countries
+(ODbL) and flags from flag-icons (MIT).
