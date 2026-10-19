@@ -12,16 +12,19 @@ pnpm install
 pnpm dev
 ```
 
-Pages: `/` the globe with a year picker (`/?year=2026`, `/?country=NO` opens a country), `/stats` statistics with a year picker (`/stats?year=2026`),
-`/stats?country=NO` one country, `/groups/<name>-<id>` one group across the years (participants, JID, organisation).
+SvelteKit with `adapter-static`: every page is prerendered to `build/` (`pnpm build`), so search engines get real HTML
+and nginx serves plain files. `#lib/*` is `src/lib/*`.
+
+Pages: `/` the globe (`/?year=2026`, `/?country=NO`), `/stats` (`?year=`, `?country=`, `?by=groups`),
+`/countries/<CC>` one country, `/groups/<name>-<id>` one group across the years, `/sitemap.xml`, `/errors` all error pages.
 
 ## A new year
 
-Each JOTA-JOTI year has its own folder in `public/data/<year>/`, listed in `public/data/years.json`. The globe shows
+Each JOTA-JOTI year has its own folder in `static/data/<year>/`, listed in `static/data/years.json`. The globe shows
 the newest year unless another is picked; `/stats` and the group pages use them all.
 
 ```sh
-pnpm data:groups                    # directory → public/data/<this year>/groups.json, adds the year to years.json
+pnpm data:groups                    # directory → static/data/<this year>/groups.json, adds the year to years.json
 pnpm data:profiles                  # JID, participants, organisation → profiles.json, then keys.json (slow: one page per group)
 ```
 

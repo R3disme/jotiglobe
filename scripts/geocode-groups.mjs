@@ -14,7 +14,7 @@ get('https://download.geonames.org/export/dump/admin2Codes.txt', 'admin2Codes.tx
 get('https://raw.githubusercontent.com/mledoze/countries/master/countries.json', 'countries.json');
 const raw = [...new Map(JSON.parse(fs.readFileSync(T + 'groups-raw.json', 'utf8')).map(g => [g.id, g])).values()];
 const all = JSON.parse(fs.readFileSync(T + 'countries.json', 'utf8'));
-const topo = JSON.parse(fs.readFileSync('public/data/countries-50m.json', 'utf8'));
+const topo = JSON.parse(fs.readFileSync('static/data/countries-50m.json', 'utf8'));
 const feats = feature(topo, topo.objects.countries).features;
 const norm = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
 const idx = new Map();
@@ -94,9 +94,9 @@ for (const g of raw) {
 }
 console.log('groups', raw.length, 'placed', out.length, 'city-matched', hit, 'approx', approx, 'no-country', [...nocc]);
 const year = +(process.argv[2] ?? new Date().getUTCFullYear());
-fs.mkdirSync(`public/data/${year}`, { recursive: true });
-fs.writeFileSync(`public/data/${year}/groups.json`, JSON.stringify({ snapshot: new Date().toISOString().slice(0, 10), fields: ['id', 'name', 'city', 'cc', 'lat', 'lon', 'approx'], groups: out }));
-const yf = 'public/data/years.json';
+fs.mkdirSync(`static/data/${year}`, { recursive: true });
+fs.writeFileSync(`static/data/${year}/groups.json`, JSON.stringify({ snapshot: new Date().toISOString().slice(0, 10), fields: ['id', 'name', 'city', 'cc', 'lat', 'lon', 'approx'], groups: out }));
+const yf = 'static/data/years.json';
 const years = fs.existsSync(yf) ? JSON.parse(fs.readFileSync(yf, 'utf8')).years : [];
 if (!years.some(y => y.year === year)) {
   const d = new Date(Date.UTC(year, 9, 1)); while (d.getUTCDay() !== 5) d.setUTCDate(d.getUTCDate() + 1); d.setUTCDate(d.getUTCDate() + 14);

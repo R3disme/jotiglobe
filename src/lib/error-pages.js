@@ -280,3 +280,5 @@ ${items}
 <a class="btn" href="/">Back to the globe</a>`
 	);
 }
+
+export const scene = (code) => (scenes[code] ?? scenes[code >= 500 ? 500 : 404])();

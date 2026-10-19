@@ -1,4 +1,7 @@
 node_modules
-dist
+/build
+/dist
+/.svelte-kit
+/static/_errors
 scripts/.cache
 .env

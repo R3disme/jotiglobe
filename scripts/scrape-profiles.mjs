@@ -2,7 +2,7 @@
 import fs from 'fs';
 const year = +(process.argv[2] ?? new Date().getUTCFullYear());
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/140 Safari/537.36';
-const ids = JSON.parse(fs.readFileSync(`public/data/${year}/groups.json`, 'utf8')).groups.map((g) => g[0]);
+const ids = JSON.parse(fs.readFileSync(`static/data/${year}/groups.json`, 'utf8')).groups.map((g) => g[0]);
 fs.mkdirSync('scripts/.cache', { recursive: true });
 const CACHE = `scripts/.cache/profiles-${year}.json`;
 const done = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, 'utf8')) : {};
@@ -45,6 +45,6 @@ save();
 
 const out = {};
 for (const id of ids) if (done[id]) out[id] = done[id];
-fs.writeFileSync(`public/data/${year}/profiles.json`, JSON.stringify({ fields: ['jid', 'participants', 'org'], groups: out }));
+fs.writeFileSync(`static/data/${year}/profiles.json`, JSON.stringify({ fields: ['jid', 'participants', 'org'], groups: out }));
 const vals = Object.values(out);
 console.log('DONE', vals.length, 'profiles, with JID', vals.filter((v) => v[0]).length, 'participants', vals.reduce((a, v) => a + (v[1] ?? 0), 0));

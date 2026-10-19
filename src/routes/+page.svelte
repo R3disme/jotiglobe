@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
-	import PrivacyNotice from './lib/PrivacyNotice.svelte';
-	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, fmtParticipants, fmtSum, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
-	import { route, navigate, setParams } from './lib/router.svelte';
-	import { cn } from './lib/utils';
+	import ScoutGlobe, { type Group } from '#lib/scout-globe.svelte';
+	import { privacy } from '#lib/privacy.svelte.ts';
+	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, fmtParticipants, fmtSum, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from '#lib/data.ts';
+	import { route, navigate, setParams } from '#lib/router.svelte.ts';
+	import { cn } from '#lib/utils.ts';
+	import { browser } from '$app/env';
+	import Seo from '#lib/Seo.svelte';
 	import Search from '@lucide/svelte/icons/search';
 	import MapPin from '@lucide/svelte/icons/map-pin';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
@@ -186,7 +188,7 @@
 
 	let autoSpin = $state(true);
 	try {
-		autoSpin = localStorage.getItem('jotiglobe:autospin') !== '0';
+		if (browser) autoSpin = localStorage.getItem('jotiglobe:autospin') !== '0';
 	} catch {}
 	const toggleSpin = () => {
 		autoSpin = !autoSpin;
@@ -210,13 +212,37 @@
 		showExit();
 	}
 
-	let privacyOpen = $state(false);
+
 	let aboutOpen = $state(false);
 </script>
 
-<svelte:head>
-	<title>{selected ? `${names[selected]} – ` : ''}JotiGlobe</title>
-</svelte:head>
+<Seo
+	title="{selected ? `${names[selected]} – ` : ''}JotiGlobe – every scout group at JOTA-JOTI on one globe"
+	description="An interactive globe of all the scout groups signed up for JOTA-JOTI, the Jamboree on the Air and on the Internet. Find scout groups near you, browse by country and see each group's participants and JID."
+	path="/"
+	jsonld={{
+		'@context': 'https://schema.org',
+		'@type': 'WebApplication',
+		name: 'JotiGlobe',
+		url: 'https://jotiglobe.narluga-tuna.ts.net/',
+		description: 'Interactive globe of the scout groups signed up for JOTA-JOTI, the Jamboree on the Air and Jamboree on the Internet.',
+		applicationCategory: 'ReferenceApplication',
+		operatingSystem: 'Any (web browser)',
+		inLanguage: 'en',
+		isAccessibleForFree: true,
+		offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+		creator: { '@type': 'Organization', name: '1st Sandnes Scout Group', address: { '@type': 'PostalAddress', addressLocality: 'Sandnes', addressCountry: 'NO' } },
+		sameAs: ['https://github.com/R3disme/jotiglobe']
+	}}
+/>
+
+<noscript>
+	<div style="padding:2rem;color:#eee;max-width:40rem">
+		<h1>JotiGlobe</h1>
+		<p>An interactive globe of the scout groups signed up for JOTA-JOTI, the Jamboree on the Air and Jamboree on the Internet. Browse the <a style="color:#7fb48d" href="/stats">statistics</a>, which work without JavaScript as plain pages for every country and group.</p>
+		<p>JotiGlobe is unofficial and open source: <a style="color:#7fb48d" href="https://github.com/R3disme/jotiglobe">github.com/R3disme/jotiglobe</a>. Made by 1st Sandnes Scout Group, Norway.</p>
+	</div>
+</noscript>
 
 <div class="relative h-dvh w-full overflow-hidden">
 	<ScoutGlobe
@@ -493,10 +519,10 @@
 			Not an official JOTA-JOTI site. Groups from the
 			<a href="https://www.jotajoti.info/directory" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">directory on jotajoti.info</a>{snapshot ? ` (${snapshot})` : ''}.
 			Locations are guessed from the town name, so some dots are a bit off.
-			<button type="button" onclick={() => (privacyOpen = true)} class="hover:text-sand underline underline-offset-2">Privacy</button> ·
+			<button type="button" onclick={() => (privacy.open = true)} class="hover:text-sand underline underline-offset-2">Privacy</button> ·
 			<a href="/stats{yearQuery}" class="hover:text-sand underline underline-offset-2">Statistics</a> ·
 			<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">Source code</a> ·
-			<a href="#about" onclick={(e) => (e.preventDefault(), (aboutOpen = !aboutOpen))} class="hover:text-sand underline underline-offset-2">Credits</a>
+			<button type="button" onclick={() => (aboutOpen = !aboutOpen)} class="hover:text-sand underline underline-offset-2">Credits</button>
 			{#if aboutOpen}
 				<span class="mt-1 block">
 					Map: Natural Earth via world-atlas · Places: GeoNames (CC BY 4.0) · Countries: mledoze/countries (ODbL) · Flags: flag-icons (MIT).
@@ -542,4 +568,4 @@
 
 <svelte:window onkeydown={(e) => globeMode && e.key === 'Escape' && (globeMode = false)} onpointermove={() => globeMode && showExit()} onpointerdown={() => globeMode && showExit()} />
 
-<PrivacyNotice bind:open={privacyOpen} />
+
