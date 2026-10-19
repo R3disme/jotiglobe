@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
-	import { loadYears, loadGroups, loadProfiles, groupPath, groupKeyFromPath, countryName, distanceKm, fmt, fmtParticipants, fmtWeekend, type YearInfo, type Profile } from './lib/data';
+	import { loadYears, loadGroups, loadProfiles, groupPath, groupKeyFromPath, countryName, distanceKm, fmt, fmtParticipants, fmtSum, fmtWeekend, type YearInfo, type Profile } from './lib/data';
 	import { route, navigate } from './lib/router.svelte';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import MapPin from '@lucide/svelte/icons/map-pin';
@@ -67,6 +67,7 @@
 		return {
 			groups: gs.length,
 			participants,
+			capped: gs.some((g) => p(g) >= 1000),
 			rank: [...totals.values()].filter((v) => v > participants).length + 1,
 			countries: totals.size,
 			largest: gs
@@ -138,7 +139,7 @@
 							</div>
 						</div>
 						<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-							{#each [{ l: 'scout groups', v: fmt(country.groups) }, { l: 'participants', v: fmt(country.participants) }, { l: `of ${country.countries} by participants`, v: `#${country.rank}` }, { l: 'organisations', v: fmt(country.orgs) }] as t (t.l)}
+							{#each [{ l: 'scout groups', v: fmt(country.groups) }, { l: 'participants', v: fmtSum(country.participants, country.capped) }, { l: `of ${country.countries} by participants`, v: `#${country.rank}` }, { l: 'organisations', v: fmt(country.orgs) }] as t (t.l)}
 								<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 									<dd class="font-heading text-2xl font-semibold tabular-nums">{t.v}</dd>
 									<dt class="text-sand/55 text-xs">{t.l}</dt>

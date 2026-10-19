@@ -12,6 +12,7 @@
 		wosmRegions,
 		fmt,
 		fmtParticipants,
+		fmtSum,
 		fmtDate,
 		fmtWeekend,
 		type YearInfo,
@@ -25,7 +26,7 @@
 	import Maximize from '@lucide/svelte/icons/maximize-2';
 	import X from '@lucide/svelte/icons/x';
 
-	type Row = { key: string; label: string; value: number; capped?: boolean; cc?: string; href?: string; sub?: string };
+	type Row = { key: string; label: string; value: number; capped?: boolean; approx?: boolean; cc?: string; href?: string; sub?: string };
 	type YearData = { year: number; snapshot: string; groups: Group[]; profiles: Map<number, Profile> };
 	type Metric = 'groups' | 'participants';
 
@@ -93,15 +94,16 @@
 		[501, Infinity, '500+']
 	];
 	function summarise(gs: Group[], profiles: Map<number, Profile>) {
-		const byCc = new Map<string, { groups: number; participants: number }>();
-		const byPlace = new Map<string, { city: string; cc: string; groups: number; participants: number }>();
-		const byWosm = new Map<string, { groups: number; participants: number }>();
-		const byContinent = new Map<string, { groups: number; participants: number }>();
-		const byOrg = new Map<string, { org: string; cc: string; groups: number; participants: number }>();
+		const byCc = new Map<string, { groups: number; participants: number; capped: number }>();
+		const byPlace = new Map<string, { city: string; cc: string; groups: number; participants: number; capped: number }>();
+		const byWosm = new Map<string, { groups: number; participants: number; capped: number }>();
+		const byContinent = new Map<string, { groups: number; participants: number; capped: number }>();
+		const byOrg = new Map<string, { org: string; cc: string; groups: number; participants: number; capped: number }>();
 		const sizes = sizeBuckets.map(() => 0);
 		let participants = 0;
-		const add = <K,>(m: Map<K, { groups: number; participants: number }>, k: K, n: number) => {
-			const x = m.get(k) ?? m.set(k, { groups: 0, participants: 0 }).get(k)!;
+		const add = <K,>(m: Map<K, { groups: number; participants: number; capped: number }>, k: K, n: number) => {
+			const x = m.get(k) ?? m.set(k, { groups: 0, participants: 0, capped: 0 }).get(k)!;
+			if (n >= 1000) x.capped++;
 			x.groups++;
 			x.participants += n;
 		};
@@ -114,7 +116,8 @@
 			if (p?.jid) add(byWosm, p.jid[0], n);
 			if (p?.org) {
 				const k = `${g.cc}|${p.org.toLowerCase()}`;
-				const o = byOrg.get(k) ?? byOrg.set(k, { org: p.org, cc: g.cc, groups: 0, participants: 0 }).get(k)!;
+				const o = byOrg.get(k) ?? byOrg.set(k, { org: p.org, cc: g.cc, groups: 0, participants: 0, capped: 0 }).get(k)!;
+				if (n >= 1000) o.capped++;
 				o.groups++;
 				o.participants += n;
 			}
@@ -122,7 +125,8 @@
 			const city = g.city.trim();
 			if (g.approx || !city || /\d/.test(city)) continue;
 			const k = `${g.cc}|${city.toLowerCase()}`;
-			const pl = byPlace.get(k) ?? byPlace.set(k, { city, cc: g.cc, groups: 0, participants: 0 }).get(k)!;
+			const pl = byPlace.get(k) ?? byPlace.set(k, { city, cc: g.cc, groups: 0, participants: 0, capped: 0 }).get(k)!;
+			if (n >= 1000) pl.capped++;
 			pl.groups++;
 			pl.participants += n;
 		}
@@ -130,7 +134,7 @@
 			.map((g) => ({ g, n: profiles.get(g.id)?.participants ?? 0 }))
 			.filter((x) => x.n)
 			.sort((a, b) => b.n - a.n);
-		return { groups: gs.length, participants, byCc, byPlace, byWosm, byContinent, byOrg, sizes, largest };
+		return { groups: gs.length, participants, capped: largest.filter((x) => x.n >= 1000).length, byCc, byPlace, byWosm, byContinent, byOrg, sizes, largest };
 	}
 	const hasP = $derived(ready && cur ? cur.profiles.size > 0 : false);
 	const m = $derived<Metric>(hasP ? metric : 'groups');
@@ -156,7 +160,7 @@
 		s
 			? [
 					{ label: 'scout groups', value: s.groups, before: p?.groups },
-					...(hasP ? [{ label: 'participants', value: s.participants, before: p?.participants }] : []),
+					...(hasP ? [{ label: 'participants', value: s.participants, before: p?.participants, approx: s.capped > 0 }] : []),
 					country
 						? { label: 'towns and cities', value: s.byPlace.size, before: p?.byPlace.size }
 						: { label: 'countries', value: s.byCc.size, before: p?.byCc.size },
@@ -169,21 +173,21 @@
 
 	const wosmRows = $derived<Row[]>(
 		s
-			? [...s.byWosm].map(([k, v]) => ({ key: k, label: wosmRegions[k] ?? k, value: v[m], sub: share(v[m], [...s.byWosm.values()].reduce((a, x) => a + x[m], 0)) })).sort(byValue)
+			? [...s.byWosm].map(([k, v]) => ({ key: k, label: wosmRegions[k] ?? k, value: v[m], approx: m === 'participants' && v.capped > 0, sub: share(v[m], [...s.byWosm.values()].reduce((a, x) => a + x[m], 0)) })).sort(byValue)
 			: []
 	);
-	const continentRows = $derived<Row[]>(s ? [...s.byContinent].map(([k, v]) => ({ key: k, label: k, value: v[m], sub: share(v[m], total) })).sort(byValue) : []);
+	const continentRows = $derived<Row[]>(s ? [...s.byContinent].map(([k, v]) => ({ key: k, label: k, value: v[m], approx: m === 'participants' && v.capped > 0, sub: share(v[m], total) })).sort(byValue) : []);
 	const placeRows = $derived<Row[]>(
 		s
 			? [...s.byPlace.values()]
-					.map((x) => ({ key: `${x.cc}|${x.city}`, label: x.city, cc: country ? undefined : x.cc, value: x[m], sub: country ? undefined : countryName(x.cc) }))
+					.map((x) => ({ key: `${x.cc}|${x.city}`, label: x.city, cc: country ? undefined : x.cc, value: x[m], approx: m === 'participants' && x.capped > 0, sub: country ? undefined : countryName(x.cc) }))
 					.sort(byValue)
 			: []
 	);
 	const orgRows = $derived<Row[]>(
 		s
 			? [...s.byOrg.values()]
-					.map((x) => ({ key: `${x.cc}|${x.org}`, label: x.org, cc: country ? undefined : x.cc, value: x[m] }))
+					.map((x) => ({ key: `${x.cc}|${x.org}`, label: x.org, cc: country ? undefined : x.cc, value: x[m], approx: m === 'participants' && x.capped > 0 }))
 					.sort(byValue)
 			: []
 	);
@@ -212,7 +216,7 @@
 		if (!all) return [];
 		const ccs = new Set([...all.byCc.keys(), ...(allPrev ? allPrev.byCc.keys() : [])]);
 		const rows = [...ccs].map((cc) => {
-			const x = all.byCc.get(cc) ?? { groups: 0, participants: 0 };
+			const x = all.byCc.get(cc) ?? { groups: 0, participants: 0, capped: 0 };
 			return {
 				cc,
 				name: countryName(cc),
@@ -280,7 +284,7 @@
 			{:else}
 				<span class="min-w-0 flex-1 truncate">{r.label}{#if r.sub}<span class="text-sand/45"> · {r.sub}</span>{/if}</span>
 			{/if}
-			<span class="font-medium tabular-nums">{r.capped ? fmtParticipants(r.value) : fmt(r.value)}</span>
+			<span class="font-medium tabular-nums">{r.capped ? fmtParticipants(r.value) : fmtSum(r.value, !!r.approx)}</span>
 		</div>
 		<div class="mt-1 ml-8 h-1.5 rounded-full bg-white/[0.06]">
 			<div class="bg-moss h-full rounded-full" style:width="{(r.value / max) * 100}%"></div>
@@ -395,7 +399,7 @@
 				{#each tiles as t (t.label)}
 					{@const d = delta(t.value, t.before)}
 					<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-						<div class="font-heading text-2xl font-semibold tabular-nums sm:text-3xl">{fmt(t.value)}</div>
+						<div class="font-heading text-2xl font-semibold tabular-nums sm:text-3xl">{fmtSum(t.value, !!('approx' in t && t.approx))}</div>
 						<div class="text-sand/60 text-xs">{t.label}</div>
 						{#if d != null}<div class={cn('mt-1 text-xs tabular-nums', d >= 0 ? 'text-moss' : 'text-red-300')}>{signed(d)} since {prev?.year}</div>{/if}
 					</div>
@@ -404,7 +408,7 @@
 
 			{#if !country}
 				{#snippet mapBody()}
-					<div class="mt-4"><WorldMap values={mapValues} {unit} onpick={pickCountry} /></div>
+					<div class="mt-4"><WorldMap values={mapValues} {unit} approx={m === 'participants' ? new Set([...all.byCc].filter(([, v]) => v.capped).map(([cc]) => cc)) : undefined} onpick={pickCountry} /></div>
 				{/snippet}
 				{@render card(`${m === 'groups' ? 'Groups' : 'Participants'} per country`, 'Click a country for its own statistics.', mapBody)}
 			{/if}
@@ -461,7 +465,7 @@
 										</td>
 										<td class="py-1.5 pr-2 text-right tabular-nums">{fmt(r.groups)}</td>
 										{#if hasP}
-											<td class="py-1.5 pr-2 text-right tabular-nums">{fmt(r.participants)}</td>
+											<td class="py-1.5 pr-2 text-right tabular-nums">{fmtSum(r.participants, r.capped > 0)}</td>
 											<td class="text-sand/60 hidden py-1.5 pr-2 text-right tabular-nums sm:table-cell">{r.avg ? r.avg.toFixed(1) : '–'}</td>
 										{/if}
 										<td class="hidden py-1.5 md:table-cell">

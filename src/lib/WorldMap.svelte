@@ -4,7 +4,7 @@
 	import { feature } from 'topojson-client';
 	import type { Feature, FeatureCollection, Geometry } from 'geojson';
 	import type { Topology } from 'topojson-specification';
-	import { countryName, fmt } from './data';
+	import { countryName, fmt, fmtSum } from './data';
 
 	type CountryFeature = Feature<Geometry, { cc: string | null }>;
 
@@ -12,11 +12,13 @@
 		values,
 		unit,
 		selected = null,
+		approx,
 		onpick
 	}: {
 		values: Map<string, number>;
 		unit: string;
 		selected?: string | null;
+		approx?: Set<string>;
 		onpick?: (cc: string) => void;
 	} = $props();
 
@@ -95,7 +97,7 @@
 			style:top="{hover.y}px"
 		>
 			<div class="font-semibold">{countryName(hover.cc)}</div>
-			<div class="text-fixed-dark/65">{values.get(hover.cc) ? `${fmt(values.get(hover.cc)!)} ${unit}` : `No ${unit}`}</div>
+			<div class="text-fixed-dark/65">{values.get(hover.cc) ? `${fmtSum(values.get(hover.cc)!, !!approx?.has(hover.cc))} ${unit}` : `No ${unit}`}</div>
 		</div>
 	{/if}
 	<div class="text-sand/55 mt-2 flex items-center gap-2 text-[11px]">

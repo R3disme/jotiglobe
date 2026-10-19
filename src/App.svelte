@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
 	import PrivacyNotice from './lib/PrivacyNotice.svelte';
-	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, fmtParticipants, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
+	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, fmtParticipants, fmtSum, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
 	import { route, navigate, setParams } from './lib/router.svelte';
 	import { cn } from './lib/utils';
 	import Search from '@lucide/svelte/icons/search';
@@ -298,7 +298,7 @@
 					<div>
 						<h2 class="text-xl font-semibold">{names[selected]}</h2>
 						<p class="text-sand/60 text-sm">
-							{perCountry.get(selected)?.length ?? 0} registered groups{#if countryParticipants} · {fmt(countryParticipants)} participants{/if}
+							{perCountry.get(selected)?.length ?? 0} registered groups{#if countryParticipants} · {fmtSum(countryParticipants, (perCountry.get(selected) ?? []).some((g) => (participants.get(g.id) ?? 0) >= 1000))} participants{/if}
 						</p>
 					</div>
 				</div>
