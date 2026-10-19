@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "check": "svelte-check --tsconfig ./tsconfig.json",
-    "data:groups": "node scripts/scrape-directory.mjs && node scripts/geocode-groups.mjs"
+    "data:groups": "node scripts/scrape-directory.mjs && node scripts/geocode-groups.mjs",
+		"data:jids": "node scripts/scrape-group-jids.mjs && node scripts/build-group-jids.mjs"
   },
   "devDependencies": {
     "@fontsource-variable/figtree": "^5.3.0",

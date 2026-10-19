@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { geoOrthographic, geoPath, geoGraticule10, geoContains, geoCentroid, geoBounds, geoDistance, geoArea } from 'd3-geo';
 	import { feature } from 'topojson-client';
-	import type { Feature, FeatureCollection, Geometry } from 'geojson';
+	import type { Feature, FeatureCollection, Geometry, Position } from 'geojson';
 	import type { Topology } from 'topojson-specification';
 	import Plus from '@lucide/svelte/icons/plus';
 	import Minus from '@lucide/svelte/icons/minus';
@@ -49,6 +49,7 @@
 	let canvas: HTMLCanvasElement;
 	let hover = $state<{ x: number; y: number; title: string; sub?: string } | null>(null);
 	let ready = $state(false);
+	let detailed = $state(false); // the 50m map has loaded (small countries like Malta only exist there)
 
 	// --- geometry -------------------------------------------------------------------------------
 	let low: CountryFeature[] = [];
@@ -126,6 +127,41 @@
 		return { ...f, geometry: { type: 'MultiPolygon', coordinates: polys.filter((p) => p.a >= max * 0.2).map((p) => p.c) } };
 	}
 
+	/**
+	 * Where the flag goes: the main parts, plus the outlying parts grouped into areas (Alaska, Hawaii, Svalbard, the Canaries…).
+	 * One flag sized to the main parts leaves those as an empty outline, so each area that falls outside it gets a flag of its own.
+	 */
+	const flagAreasCache = new WeakMap<CountryFeature, { main: CountryFeature; rest: CountryFeature[] }>();
+	function flagAreas(f: CountryFeature) {
+		let a = flagAreasCache.get(f);
+		if (a) return a;
+		const main = mainParts(f);
+		const rest: CountryFeature[] = [];
+		if (f.geometry.type === 'MultiPolygon' && main.geometry.type === 'MultiPolygon') {
+			const inMain = new Set(main.geometry.coordinates);
+			// islands less than ~3° apart belong to the same area (chains like the Aleutians join up link by link)
+			const clusters: { polys: Position[][][]; cs: [number, number][] }[] = [];
+			for (const poly of f.geometry.coordinates) {
+				if (inMain.has(poly)) continue;
+				const c = geoCentroid({ type: 'Polygon', coordinates: poly });
+				const near = clusters.filter((k) => k.cs.some((x) => geoDistance(x, c) < 0.05));
+				const into = near[0] ?? { polys: [], cs: [] };
+				if (!near.length) clusters.push(into);
+				for (const other of near.slice(1)) {
+					into.polys.push(...other.polys);
+					into.cs.push(...other.cs);
+					clusters.splice(clusters.indexOf(other), 1);
+				}
+				into.polys.push(poly);
+				into.cs.push(c);
+			}
+			for (const k of clusters) rest.push({ ...f, geometry: { type: 'MultiPolygon', coordinates: k.polys } });
+		}
+		a = { main, rest };
+		flagAreasCache.set(f, a);
+		return a;
+	}
+
 	/** Zoom so the country's angular extent fills most of the view */
 	function fitZoom(f: CountryFeature) {
 		const c = geoCentroid(f);
@@ -144,6 +180,7 @@
 	}
 
 	$effect(() => {
+		void detailed;
 		const f = findFeature(selected);
 		const fg = focused;
 		if (ready && fg) {
@@ -320,7 +357,7 @@
 		// nearest visible group dot first (when zoomed in), otherwise the country
 		const best = dotAt(p);
 		if (best) {
-			hover = { x: p.x, y: p.y, title: best.g.name, sub: `${best.g.city}${best.g.approx ? ' (approximate location)' : ''} · double-click for profile` };
+			hover = { x: p.x, y: p.y, title: best.g.name, sub: `${best.g.city}${best.g.approx ? ' (approximate location)' : ''} · double-click for the group page` };
 			return;
 		}
 		const cc = countryAt(p);
@@ -425,19 +462,34 @@
 		if (selected) lastSelected = selected;
 		if (sel && flagAlpha > 0.01) {
 			const img = flag(sel.properties.cc!);
-			const [[x0, y0], [x1, y1]] = geoPath(projection).bounds(mainParts(sel)); // size the flag to the main parts, not overseas territories
-			ctx.save();
-			ctx.beginPath();
-			path(sel);
-			ctx.clip();
 			if (img) {
-				const bw = x1 - x0,
-					bh = y1 - y0;
-				const s = Math.max(bw / 4, bh / 3);
+				const areas = flagAreas(sel);
+				const bounds = geoPath(projection).bounds;
+				/** Draws the flag covering `b`, clipped to `shape`; returns the flag's rectangle */
+				const drawFlag = (shape: CountryFeature, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) => {
+					const bw = x1 - x0,
+						bh = y1 - y0;
+					const s = Math.max(bw / 4, bh / 3);
+					const r = { x: x0 + (bw - 4 * s) / 2, y: y0 + (bh - 3 * s) / 2, w: 4 * s, h: 3 * s };
+					ctx.save();
+					ctx.beginPath();
+					path(shape);
+					ctx.clip();
+					ctx.drawImage(img, r.x, r.y, r.w, r.h);
+					ctx.restore();
+					return r;
+				};
 				ctx.globalAlpha = flagAlpha;
-				ctx.drawImage(img, x0 + (bw - 4 * s) / 2, y0 + (bh - 3 * s) / 2, 4 * s, 3 * s);
+				// the main flag fills the whole country; outlying areas it doesn't reach get their own
+				const m = drawFlag(sel, bounds(areas.main));
+				for (const area of areas.rest) {
+					const b = bounds(area);
+					if (!isFinite(b[0][0])) continue; // on the far side
+					const inside = b[0][0] >= m.x && b[0][1] >= m.y && b[1][0] <= m.x + m.w && b[1][1] <= m.y + m.h;
+					if (!inside && b[1][0] - b[0][0] + b[1][1] - b[0][1] > 1) drawFlag(area, b);
+				}
+				ctx.globalAlpha = 1;
 			}
-			ctx.restore();
 			ctx.beginPath();
 			path(sel);
 			ctx.strokeStyle = `rgba(255,255,255,${0.8 * flagAlpha})`;
@@ -583,7 +635,12 @@
 		load('/data/countries-110m.json').then((f) => {
 			low = f;
 			ready = true;
-			load('/data/countries-50m.json').then((f) => (high = f));
+			load('/data/countries-50m.json').then((f) => {
+				high = f;
+				const have = new Set(low.map((x) => x.properties.cc));
+				low = [...low, ...f.filter((x) => x.properties.cc && !have.has(x.properties.cc))];
+				detailed = true;
+			});
 		});
 
 		let onScreen = true;
