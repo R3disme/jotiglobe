@@ -1,273 +1,144 @@
-/* Generated from public/flags (flag-icons 4x3, MIT). Same-origin images only. */
-.fi{background-size:cover;background-position:50%;background-repeat:no-repeat;position:relative;display:inline-block;width:1.333333em;line-height:1em}.fi:before{content:"\00a0"}
-.fi-ad{background-image:url(/flags/ad.svg)}
-.fi-ae{background-image:url(/flags/ae.svg)}
-.fi-af{background-image:url(/flags/af.svg)}
-.fi-ag{background-image:url(/flags/ag.svg)}
-.fi-ai{background-image:url(/flags/ai.svg)}
-.fi-al{background-image:url(/flags/al.svg)}
-.fi-am{background-image:url(/flags/am.svg)}
-.fi-ao{background-image:url(/flags/ao.svg)}
-.fi-aq{background-image:url(/flags/aq.svg)}
-.fi-ar{background-image:url(/flags/ar.svg)}
-.fi-arab{background-image:url(/flags/arab.svg)}
-.fi-as{background-image:url(/flags/as.svg)}
-.fi-asean{background-image:url(/flags/asean.svg)}
-.fi-at{background-image:url(/flags/at.svg)}
-.fi-au{background-image:url(/flags/au.svg)}
-.fi-aw{background-image:url(/flags/aw.svg)}
-.fi-ax{background-image:url(/flags/ax.svg)}
-.fi-az{background-image:url(/flags/az.svg)}
-.fi-ba{background-image:url(/flags/ba.svg)}
-.fi-bb{background-image:url(/flags/bb.svg)}
-.fi-bd{background-image:url(/flags/bd.svg)}
-.fi-be{background-image:url(/flags/be.svg)}
-.fi-bf{background-image:url(/flags/bf.svg)}
-.fi-bg{background-image:url(/flags/bg.svg)}
-.fi-bh{background-image:url(/flags/bh.svg)}
-.fi-bi{background-image:url(/flags/bi.svg)}
-.fi-bj{background-image:url(/flags/bj.svg)}
-.fi-bl{background-image:url(/flags/bl.svg)}
-.fi-bm{background-image:url(/flags/bm.svg)}
-.fi-bn{background-image:url(/flags/bn.svg)}
-.fi-bo{background-image:url(/flags/bo.svg)}
-.fi-bq{background-image:url(/flags/bq.svg)}
-.fi-br{background-image:url(/flags/br.svg)}
-.fi-bs{background-image:url(/flags/bs.svg)}
-.fi-bt{background-image:url(/flags/bt.svg)}
-.fi-bv{background-image:url(/flags/bv.svg)}
-.fi-bw{background-image:url(/flags/bw.svg)}
-.fi-by{background-image:url(/flags/by.svg)}
-.fi-bz{background-image:url(/flags/bz.svg)}
-.fi-ca{background-image:url(/flags/ca.svg)}
-.fi-cc{background-image:url(/flags/cc.svg)}
-.fi-cd{background-image:url(/flags/cd.svg)}
-.fi-cefta{background-image:url(/flags/cefta.svg)}
-.fi-cf{background-image:url(/flags/cf.svg)}
-.fi-cg{background-image:url(/flags/cg.svg)}
-.fi-ch{background-image:url(/flags/ch.svg)}
-.fi-ci{background-image:url(/flags/ci.svg)}
-.fi-ck{background-image:url(/flags/ck.svg)}
-.fi-cl{background-image:url(/flags/cl.svg)}
-.fi-cm{background-image:url(/flags/cm.svg)}
-.fi-cn{background-image:url(/flags/cn.svg)}
-.fi-co{background-image:url(/flags/co.svg)}
-.fi-cp{background-image:url(/flags/cp.svg)}
-.fi-cr{background-image:url(/flags/cr.svg)}
-.fi-cu{background-image:url(/flags/cu.svg)}
-.fi-cv{background-image:url(/flags/cv.svg)}
-.fi-cw{background-image:url(/flags/cw.svg)}
-.fi-cx{background-image:url(/flags/cx.svg)}
-.fi-cy{background-image:url(/flags/cy.svg)}
-.fi-cz{background-image:url(/flags/cz.svg)}
-.fi-de{background-image:url(/flags/de.svg)}
-.fi-dg{background-image:url(/flags/dg.svg)}
-.fi-dj{background-image:url(/flags/dj.svg)}
-.fi-dk{background-image:url(/flags/dk.svg)}
-.fi-dm{background-image:url(/flags/dm.svg)}
-.fi-do{background-image:url(/flags/do.svg)}
-.fi-dz{background-image:url(/flags/dz.svg)}
-.fi-eac{background-image:url(/flags/eac.svg)}
-.fi-ec{background-image:url(/flags/ec.svg)}
-.fi-ee{background-image:url(/flags/ee.svg)}
-.fi-eg{background-image:url(/flags/eg.svg)}
-.fi-eh{background-image:url(/flags/eh.svg)}
-.fi-er{background-image:url(/flags/er.svg)}
-.fi-es-ct{background-image:url(/flags/es-ct.svg)}
-.fi-es-ga{background-image:url(/flags/es-ga.svg)}
-.fi-es-pv{background-image:url(/flags/es-pv.svg)}
-.fi-es{background-image:url(/flags/es.svg)}
-.fi-et{background-image:url(/flags/et.svg)}
-.fi-eu{background-image:url(/flags/eu.svg)}
-.fi-fi{background-image:url(/flags/fi.svg)}
-.fi-fj{background-image:url(/flags/fj.svg)}
-.fi-fk{background-image:url(/flags/fk.svg)}
-.fi-fm{background-image:url(/flags/fm.svg)}
-.fi-fo{background-image:url(/flags/fo.svg)}
-.fi-fr{background-image:url(/flags/fr.svg)}
-.fi-ga{background-image:url(/flags/ga.svg)}
-.fi-gb-eng{background-image:url(/flags/gb-eng.svg)}
-.fi-gb-nir{background-image:url(/flags/gb-nir.svg)}
-.fi-gb-sct{background-image:url(/flags/gb-sct.svg)}
-.fi-gb-wls{background-image:url(/flags/gb-wls.svg)}
-.fi-gb{background-image:url(/flags/gb.svg)}
-.fi-gd{background-image:url(/flags/gd.svg)}
-.fi-ge{background-image:url(/flags/ge.svg)}
-.fi-gf{background-image:url(/flags/gf.svg)}
-.fi-gg{background-image:url(/flags/gg.svg)}
-.fi-gh{background-image:url(/flags/gh.svg)}
-.fi-gi{background-image:url(/flags/gi.svg)}
-.fi-gl{background-image:url(/flags/gl.svg)}
-.fi-gm{background-image:url(/flags/gm.svg)}
-.fi-gn{background-image:url(/flags/gn.svg)}
-.fi-gp{background-image:url(/flags/gp.svg)}
-.fi-gq{background-image:url(/flags/gq.svg)}
-.fi-gr{background-image:url(/flags/gr.svg)}
-.fi-gs{background-image:url(/flags/gs.svg)}
-.fi-gt{background-image:url(/flags/gt.svg)}
-.fi-gu{background-image:url(/flags/gu.svg)}
-.fi-gw{background-image:url(/flags/gw.svg)}
-.fi-gy{background-image:url(/flags/gy.svg)}
-.fi-hk{background-image:url(/flags/hk.svg)}
-.fi-hm{background-image:url(/flags/hm.svg)}
-.fi-hn{background-image:url(/flags/hn.svg)}
-.fi-hr{background-image:url(/flags/hr.svg)}
-.fi-ht{background-image:url(/flags/ht.svg)}
-.fi-hu{background-image:url(/flags/hu.svg)}
-.fi-ic{background-image:url(/flags/ic.svg)}
-.fi-id{background-image:url(/flags/id.svg)}
-.fi-ie{background-image:url(/flags/ie.svg)}
-.fi-il{background-image:url(/flags/il.svg)}
-.fi-im{background-image:url(/flags/im.svg)}
-.fi-in{background-image:url(/flags/in.svg)}
-.fi-io{background-image:url(/flags/io.svg)}
-.fi-iq{background-image:url(/flags/iq.svg)}
-.fi-ir{background-image:url(/flags/ir.svg)}
-.fi-is{background-image:url(/flags/is.svg)}
-.fi-it{background-image:url(/flags/it.svg)}
-.fi-je{background-image:url(/flags/je.svg)}
-.fi-jm{background-image:url(/flags/jm.svg)}
-.fi-jo{background-image:url(/flags/jo.svg)}
-.fi-jp{background-image:url(/flags/jp.svg)}
-.fi-ke{background-image:url(/flags/ke.svg)}
-.fi-kg{background-image:url(/flags/kg.svg)}
-.fi-kh{background-image:url(/flags/kh.svg)}
-.fi-ki{background-image:url(/flags/ki.svg)}
-.fi-km{background-image:url(/flags/km.svg)}
-.fi-kn{background-image:url(/flags/kn.svg)}
-.fi-kp{background-image:url(/flags/kp.svg)}
-.fi-kr{background-image:url(/flags/kr.svg)}
-.fi-kw{background-image:url(/flags/kw.svg)}
-.fi-ky{background-image:url(/flags/ky.svg)}
-.fi-kz{background-image:url(/flags/kz.svg)}
-.fi-la{background-image:url(/flags/la.svg)}
-.fi-lb{background-image:url(/flags/lb.svg)}
-.fi-lc{background-image:url(/flags/lc.svg)}
-.fi-li{background-image:url(/flags/li.svg)}
-.fi-lk{background-image:url(/flags/lk.svg)}
-.fi-lr{background-image:url(/flags/lr.svg)}
-.fi-ls{background-image:url(/flags/ls.svg)}
-.fi-lt{background-image:url(/flags/lt.svg)}
-.fi-lu{background-image:url(/flags/lu.svg)}
-.fi-lv{background-image:url(/flags/lv.svg)}
-.fi-ly{background-image:url(/flags/ly.svg)}
-.fi-ma{background-image:url(/flags/ma.svg)}
-.fi-mc{background-image:url(/flags/mc.svg)}
-.fi-md{background-image:url(/flags/md.svg)}
-.fi-me{background-image:url(/flags/me.svg)}
-.fi-mf{background-image:url(/flags/mf.svg)}
-.fi-mg{background-image:url(/flags/mg.svg)}
-.fi-mh{background-image:url(/flags/mh.svg)}
-.fi-mk{background-image:url(/flags/mk.svg)}
-.fi-ml{background-image:url(/flags/ml.svg)}
-.fi-mm{background-image:url(/flags/mm.svg)}
-.fi-mn{background-image:url(/flags/mn.svg)}
-.fi-mo{background-image:url(/flags/mo.svg)}
-.fi-mp{background-image:url(/flags/mp.svg)}
-.fi-mq{background-image:url(/flags/mq.svg)}
-.fi-mr{background-image:url(/flags/mr.svg)}
-.fi-ms{background-image:url(/flags/ms.svg)}
-.fi-mt{background-image:url(/flags/mt.svg)}
-.fi-mu{background-image:url(/flags/mu.svg)}
-.fi-mv{background-image:url(/flags/mv.svg)}
-.fi-mw{background-image:url(/flags/mw.svg)}
-.fi-mx{background-image:url(/flags/mx.svg)}
-.fi-my{background-image:url(/flags/my.svg)}
-.fi-mz{background-image:url(/flags/mz.svg)}
-.fi-na{background-image:url(/flags/na.svg)}
-.fi-nc{background-image:url(/flags/nc.svg)}
-.fi-ne{background-image:url(/flags/ne.svg)}
-.fi-nf{background-image:url(/flags/nf.svg)}
-.fi-ng{background-image:url(/flags/ng.svg)}
-.fi-ni{background-image:url(/flags/ni.svg)}
-.fi-nl{background-image:url(/flags/nl.svg)}
-.fi-no{background-image:url(/flags/no.svg)}
-.fi-np{background-image:url(/flags/np.svg)}
-.fi-nr{background-image:url(/flags/nr.svg)}
-.fi-nu{background-image:url(/flags/nu.svg)}
-.fi-nz{background-image:url(/flags/nz.svg)}
-.fi-om{background-image:url(/flags/om.svg)}
-.fi-pa{background-image:url(/flags/pa.svg)}
-.fi-pc{background-image:url(/flags/pc.svg)}
-.fi-pe{background-image:url(/flags/pe.svg)}
-.fi-pf{background-image:url(/flags/pf.svg)}
-.fi-pg{background-image:url(/flags/pg.svg)}
-.fi-ph{background-image:url(/flags/ph.svg)}
-.fi-pk{background-image:url(/flags/pk.svg)}
-.fi-pl{background-image:url(/flags/pl.svg)}
-.fi-pm{background-image:url(/flags/pm.svg)}
-.fi-pn{background-image:url(/flags/pn.svg)}
-.fi-pr{background-image:url(/flags/pr.svg)}
-.fi-ps{background-image:url(/flags/ps.svg)}
-.fi-pt{background-image:url(/flags/pt.svg)}
-.fi-pw{background-image:url(/flags/pw.svg)}
-.fi-py{background-image:url(/flags/py.svg)}
-.fi-qa{background-image:url(/flags/qa.svg)}
-.fi-re{background-image:url(/flags/re.svg)}
-.fi-ro{background-image:url(/flags/ro.svg)}
-.fi-rs{background-image:url(/flags/rs.svg)}
-.fi-ru{background-image:url(/flags/ru.svg)}
-.fi-rw{background-image:url(/flags/rw.svg)}
-.fi-sa{background-image:url(/flags/sa.svg)}
-.fi-sb{background-image:url(/flags/sb.svg)}
-.fi-sc{background-image:url(/flags/sc.svg)}
-.fi-sd{background-image:url(/flags/sd.svg)}
-.fi-se{background-image:url(/flags/se.svg)}
-.fi-sg{background-image:url(/flags/sg.svg)}
-.fi-sh-ac{background-image:url(/flags/sh-ac.svg)}
-.fi-sh-hl{background-image:url(/flags/sh-hl.svg)}
-.fi-sh-ta{background-image:url(/flags/sh-ta.svg)}
-.fi-sh{background-image:url(/flags/sh.svg)}
-.fi-si{background-image:url(/flags/si.svg)}
-.fi-sj{background-image:url(/flags/sj.svg)}
-.fi-sk{background-image:url(/flags/sk.svg)}
-.fi-sl{background-image:url(/flags/sl.svg)}
-.fi-sm{background-image:url(/flags/sm.svg)}
-.fi-sn{background-image:url(/flags/sn.svg)}
-.fi-so{background-image:url(/flags/so.svg)}
-.fi-sr{background-image:url(/flags/sr.svg)}
-.fi-ss{background-image:url(/flags/ss.svg)}
-.fi-st{background-image:url(/flags/st.svg)}
-.fi-sv{background-image:url(/flags/sv.svg)}
-.fi-sx{background-image:url(/flags/sx.svg)}
-.fi-sy{background-image:url(/flags/sy.svg)}
-.fi-sz{background-image:url(/flags/sz.svg)}
-.fi-tc{background-image:url(/flags/tc.svg)}
-.fi-td{background-image:url(/flags/td.svg)}
-.fi-tf{background-image:url(/flags/tf.svg)}
-.fi-tg{background-image:url(/flags/tg.svg)}
-.fi-th{background-image:url(/flags/th.svg)}
-.fi-tj{background-image:url(/flags/tj.svg)}
-.fi-tk{background-image:url(/flags/tk.svg)}
-.fi-tl{background-image:url(/flags/tl.svg)}
-.fi-tm{background-image:url(/flags/tm.svg)}
-.fi-tn{background-image:url(/flags/tn.svg)}
-.fi-to{background-image:url(/flags/to.svg)}
-.fi-tr{background-image:url(/flags/tr.svg)}
-.fi-tt{background-image:url(/flags/tt.svg)}
-.fi-tv{background-image:url(/flags/tv.svg)}
-.fi-tw{background-image:url(/flags/tw.svg)}
-.fi-tz{background-image:url(/flags/tz.svg)}
-.fi-ua{background-image:url(/flags/ua.svg)}
-.fi-ug{background-image:url(/flags/ug.svg)}
-.fi-um{background-image:url(/flags/um.svg)}
-.fi-un{background-image:url(/flags/un.svg)}
-.fi-us{background-image:url(/flags/us.svg)}
-.fi-uy{background-image:url(/flags/uy.svg)}
-.fi-uz{background-image:url(/flags/uz.svg)}
-.fi-va{background-image:url(/flags/va.svg)}
-.fi-vc{background-image:url(/flags/vc.svg)}
-.fi-ve{background-image:url(/flags/ve.svg)}
-.fi-vg{background-image:url(/flags/vg.svg)}
-.fi-vi{background-image:url(/flags/vi.svg)}
-.fi-vn{background-image:url(/flags/vn.svg)}
-.fi-vu{background-image:url(/flags/vu.svg)}
-.fi-wf{background-image:url(/flags/wf.svg)}
-.fi-ws{background-image:url(/flags/ws.svg)}
-.fi-xk{background-image:url(/flags/xk.svg)}
-.fi-xx{background-image:url(/flags/xx.svg)}
-.fi-ye{background-image:url(/flags/ye.svg)}
-.fi-yt{background-image:url(/flags/yt.svg)}
-.fi-za{background-image:url(/flags/za.svg)}
-.fi-zm{background-image:url(/flags/zm.svg)}
-.fi-zw{background-image:url(/flags/zw.svg)}
+/* Generated by scripts/build-flags.mjs from public/flags (flag-icons, MIT). */
+.fi{background-image:url(./assets/flags.webp);background-size:1200% 1200%;background-repeat:no-repeat;position:relative;display:inline-block;width:1.333333em;line-height:1em}.fi:before{content:"\00a0"}
+.fi-ae{background-position:0% 0%}
+.fi-af{background-position:9.0909% 0%}
+.fi-ag{background-position:18.1818% 0%}
+.fi-al{background-position:27.2727% 0%}
+.fi-ao{background-position:36.3636% 0%}
+.fi-ar{background-position:45.4545% 0%}
+.fi-at{background-position:54.5455% 0%}
+.fi-au{background-position:63.6364% 0%}
+.fi-ba{background-position:72.7273% 0%}
+.fi-bb{background-position:81.8182% 0%}
+.fi-bd{background-position:90.9091% 0%}
+.fi-be{background-position:100% 0%}
+.fi-bf{background-position:0% 9.0909%}
+.fi-bg{background-position:9.0909% 9.0909%}
+.fi-bh{background-position:18.1818% 9.0909%}
+.fi-bi{background-position:27.2727% 9.0909%}
+.fi-bj{background-position:36.3636% 9.0909%}
+.fi-bn{background-position:45.4545% 9.0909%}
+.fi-bo{background-position:54.5455% 9.0909%}
+.fi-br{background-position:63.6364% 9.0909%}
+.fi-bt{background-position:72.7273% 9.0909%}
+.fi-bw{background-position:81.8182% 9.0909%}
+.fi-by{background-position:90.9091% 9.0909%}
+.fi-bz{background-position:100% 9.0909%}
+.fi-ca{background-position:0% 18.1818%}
+.fi-cd{background-position:9.0909% 18.1818%}
+.fi-cg{background-position:18.1818% 18.1818%}
+.fi-ch{background-position:27.2727% 18.1818%}
+.fi-ci{background-position:36.3636% 18.1818%}
+.fi-cl{background-position:45.4545% 18.1818%}
+.fi-cm{background-position:54.5455% 18.1818%}
+.fi-co{background-position:63.6364% 18.1818%}
+.fi-cr{background-position:72.7273% 18.1818%}
+.fi-cv{background-position:81.8182% 18.1818%}
+.fi-cw{background-position:90.9091% 18.1818%}
+.fi-cy{background-position:100% 18.1818%}
+.fi-cz{background-position:0% 27.2727%}
+.fi-de{background-position:9.0909% 27.2727%}
+.fi-dk{background-position:18.1818% 27.2727%}
+.fi-do{background-position:27.2727% 27.2727%}
+.fi-dz{background-position:36.3636% 27.2727%}
+.fi-ec{background-position:45.4545% 27.2727%}
+.fi-eg{background-position:54.5455% 27.2727%}
+.fi-es{background-position:63.6364% 27.2727%}
+.fi-et{background-position:72.7273% 27.2727%}
+.fi-fi{background-position:81.8182% 27.2727%}
+.fi-fr{background-position:90.9091% 27.2727%}
+.fi-ga{background-position:100% 27.2727%}
+.fi-gb{background-position:0% 36.3636%}
+.fi-gh{background-position:9.0909% 36.3636%}
+.fi-gm{background-position:18.1818% 36.3636%}
+.fi-gn{background-position:27.2727% 36.3636%}
+.fi-gr{background-position:36.3636% 36.3636%}
+.fi-gt{background-position:45.4545% 36.3636%}
+.fi-gw{background-position:54.5455% 36.3636%}
+.fi-gy{background-position:63.6364% 36.3636%}
+.fi-hk{background-position:72.7273% 36.3636%}
+.fi-hn{background-position:81.8182% 36.3636%}
+.fi-hu{background-position:90.9091% 36.3636%}
+.fi-id{background-position:100% 36.3636%}
+.fi-ie{background-position:0% 45.4545%}
+.fi-il{background-position:9.0909% 45.4545%}
+.fi-in{background-position:18.1818% 45.4545%}
+.fi-iq{background-position:27.2727% 45.4545%}
+.fi-is{background-position:36.3636% 45.4545%}
+.fi-it{background-position:45.4545% 45.4545%}
+.fi-jo{background-position:54.5455% 45.4545%}
+.fi-jp{background-position:63.6364% 45.4545%}
+.fi-ke{background-position:72.7273% 45.4545%}
+.fi-kh{background-position:81.8182% 45.4545%}
+.fi-kr{background-position:90.9091% 45.4545%}
+.fi-kw{background-position:100% 45.4545%}
+.fi-lb{background-position:0% 54.5455%}
+.fi-lc{background-position:9.0909% 54.5455%}
+.fi-lk{background-position:18.1818% 54.5455%}
+.fi-lr{background-position:27.2727% 54.5455%}
+.fi-ls{background-position:36.3636% 54.5455%}
+.fi-lu{background-position:45.4545% 54.5455%}
+.fi-ly{background-position:54.5455% 54.5455%}
+.fi-ma{background-position:63.6364% 54.5455%}
+.fi-mg{background-position:72.7273% 54.5455%}
+.fi-ml{background-position:81.8182% 54.5455%}
+.fi-mm{background-position:90.9091% 54.5455%}
+.fi-mr{background-position:100% 54.5455%}
+.fi-mt{background-position:0% 63.6364%}
+.fi-mu{background-position:9.0909% 63.6364%}
+.fi-mv{background-position:18.1818% 63.6364%}
+.fi-mw{background-position:27.2727% 63.6364%}
+.fi-mx{background-position:36.3636% 63.6364%}
+.fi-my{background-position:45.4545% 63.6364%}
+.fi-na{background-position:54.5455% 63.6364%}
+.fi-ne{background-position:63.6364% 63.6364%}
+.fi-ng{background-position:72.7273% 63.6364%}
+.fi-nl{background-position:81.8182% 63.6364%}
+.fi-no{background-position:90.9091% 63.6364%}
+.fi-np{background-position:100% 63.6364%}
+.fi-nz{background-position:0% 72.7273%}
+.fi-om{background-position:9.0909% 72.7273%}
+.fi-pa{background-position:18.1818% 72.7273%}
+.fi-pe{background-position:27.2727% 72.7273%}
+.fi-ph{background-position:36.3636% 72.7273%}
+.fi-pk{background-position:45.4545% 72.7273%}
+.fi-pl{background-position:54.5455% 72.7273%}
+.fi-pr{background-position:63.6364% 72.7273%}
+.fi-ps{background-position:72.7273% 72.7273%}
+.fi-pt{background-position:81.8182% 72.7273%}
+.fi-py{background-position:90.9091% 72.7273%}
+.fi-qa{background-position:100% 72.7273%}
+.fi-ro{background-position:0% 81.8182%}
+.fi-rs{background-position:9.0909% 81.8182%}
+.fi-rw{background-position:18.1818% 81.8182%}
+.fi-sa{background-position:27.2727% 81.8182%}
+.fi-sd{background-position:36.3636% 81.8182%}
+.fi-se{background-position:45.4545% 81.8182%}
+.fi-sg{background-position:54.5455% 81.8182%}
+.fi-si{background-position:63.6364% 81.8182%}
+.fi-sk{background-position:72.7273% 81.8182%}
+.fi-sl{background-position:81.8182% 81.8182%}
+.fi-sn{background-position:90.9091% 81.8182%}
+.fi-sr{background-position:100% 81.8182%}
+.fi-ss{background-position:0% 90.9091%}
+.fi-st{background-position:9.0909% 90.9091%}
+.fi-sv{background-position:18.1818% 90.9091%}
+.fi-sy{background-position:27.2727% 90.9091%}
+.fi-td{background-position:36.3636% 90.9091%}
+.fi-tg{background-position:45.4545% 90.9091%}
+.fi-th{background-position:54.5455% 90.9091%}
+.fi-tn{background-position:63.6364% 90.9091%}
+.fi-tr{background-position:72.7273% 90.9091%}
+.fi-tt{background-position:81.8182% 90.9091%}
+.fi-tw{background-position:90.9091% 90.9091%}
+.fi-tz{background-position:100% 90.9091%}
+.fi-ua{background-position:0% 100%}
+.fi-ug{background-position:9.0909% 100%}
+.fi-us{background-position:18.1818% 100%}
+.fi-uy{background-position:27.2727% 100%}
+.fi-vc{background-position:36.3636% 100%}
+.fi-ve{background-position:45.4545% 100%}
+.fi-vn{background-position:54.5455% 100%}
+.fi-ye{background-position:63.6364% 100%}
+.fi-za{background-position:72.7273% 100%}
+.fi-zw{background-position:81.8182% 100%}

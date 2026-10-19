@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
-	import { loadYears, loadGroups, loadProfiles, groupPath, groupKeyFromPath, countryName, distanceKm, fmt, fmtWeekend, type YearInfo, type Profile } from './lib/data';
+	import { loadYears, loadGroups, loadProfiles, groupPath, groupKeyFromPath, countryName, distanceKm, fmt, fmtParticipants, fmtSum, fmtWeekend, type YearInfo, type Profile } from './lib/data';
 	import { route, navigate } from './lib/router.svelte';
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import MapPin from '@lucide/svelte/icons/map-pin';
@@ -67,6 +67,7 @@
 		return {
 			groups: gs.length,
 			participants,
+			capped: gs.some((g) => p(g) >= 1000),
 			rank: [...totals.values()].filter((v) => v > participants).length + 1,
 			countries: totals.size,
 			largest: gs
@@ -138,7 +139,7 @@
 							</div>
 						</div>
 						<dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-							{#each [{ l: 'scout groups', v: fmt(country.groups) }, { l: 'participants', v: fmt(country.participants) }, { l: `of ${country.countries} by participants`, v: `#${country.rank}` }, { l: 'organisations', v: fmt(country.orgs) }] as t (t.l)}
+							{#each [{ l: 'scout groups', v: fmt(country.groups) }, { l: 'participants', v: fmtSum(country.participants, country.capped) }, { l: `of ${country.countries} by participants`, v: `#${country.rank}` }, { l: 'organisations', v: fmt(country.orgs) }] as t (t.l)}
 								<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 									<dd class="font-heading text-2xl font-semibold tabular-nums">{t.v}</dd>
 									<dt class="text-sand/55 text-xs">{t.l}</dt>
@@ -153,7 +154,7 @@
 										<a href={groupPath(g)} class="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-white/5">
 											<span class="text-sand/40 w-5 text-right text-xs tabular-nums">{i + 1}</span>
 											<span class="min-w-0 flex-1 truncate">{g.name}<span class="text-sand/45"> · {g.city || countryName(g.cc)}</span></span>
-											{#if n}<span class="tabular-nums">{fmt(n)}</span>{/if}
+											{#if n}<span class="tabular-nums">{fmtParticipants(n)}</span>{/if}
 										</a>
 									</li>
 								{/each}
@@ -182,7 +183,7 @@
 						<dl class="grid grid-cols-2 gap-3">
 							<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 								<dt class="text-sand/55 text-xs">Participants in {now.y.year}</dt>
-								<dd class="font-heading mt-1 text-2xl font-semibold tabular-nums">{now.p?.participants != null ? fmt(now.p.participants) : '–'}</dd>
+								<dd class="font-heading mt-1 text-2xl font-semibold tabular-nums">{now.p?.participants != null ? fmtParticipants(now.p.participants) : '–'}</dd>
 							</div>
 							<div class="rounded-xl border border-white/10 bg-white/[0.03] p-4">
 								<dt class="text-sand/55 text-xs">Group JID in {now.y.year}</dt>
@@ -202,8 +203,8 @@
 							{#if history.length > 1}
 								<div class="mt-3 flex h-32 items-end gap-3" role="img" aria-label="Participants per year">
 									{#each history as s (s.y.year)}
-										<div class="flex h-full min-w-0 flex-1 flex-col items-center gap-1" title="{s.y.year}: {s.p?.participants ?? '?'} participants">
-											<span class="text-xs tabular-nums">{s.p?.participants ?? '–'}</span>
+										<div class="flex h-full min-w-0 flex-1 flex-col items-center gap-1" title="{s.y.year}: {s.p?.participants != null ? fmtParticipants(s.p.participants) : '?'} participants">
+											<span class="text-xs tabular-nums">{s.p?.participants != null ? fmtParticipants(s.p.participants) : '–'}</span>
 											<div class="flex min-h-0 w-full flex-1 items-end justify-center">
 												<div class="bg-moss w-full max-w-12 rounded-t" style:height="{((s.p?.participants ?? 0) / maxP) * 100}%"></div>
 											</div>
@@ -218,7 +219,7 @@
 										<a href="/stats?year={s.y.year}" class="font-medium hover:underline">{s.y.year}</a>
 										<span class="text-sand/55 min-w-0 flex-1 truncate">{s.g.name !== group.name ? s.g.name : fmtWeekend(s.y)}</span>
 										{#if s.p?.jid}<span class="text-sand/60 font-mono text-xs">{s.p.jid}</span>{/if}
-										<span class="tabular-nums">{s.p?.participants != null ? `${fmt(s.p.participants)} participants` : ''}</span>
+										<span class="tabular-nums">{s.p?.participants != null ? `${fmtParticipants(s.p.participants)} participants` : ''}</span>
 									</li>
 								{/each}
 							</ul>

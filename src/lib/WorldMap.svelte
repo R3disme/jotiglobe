@@ -4,7 +4,7 @@
 	import { feature } from 'topojson-client';
 	import type { Feature, FeatureCollection, Geometry } from 'geojson';
 	import type { Topology } from 'topojson-specification';
-	import { countryName, fmt } from './data';
+	import { countryName, fmt, fmtSum } from './data';
 
 	type CountryFeature = Feature<Geometry, { cc: string | null }>;
 
@@ -12,11 +12,13 @@
 		values,
 		unit,
 		selected = null,
+		approx,
 		onpick
 	}: {
 		values: Map<string, number>;
 		unit: string;
 		selected?: string | null;
+		approx?: Set<string>;
 		onpick?: (cc: string) => void;
 	} = $props();
 
@@ -37,11 +39,10 @@
 			const t = (await (await fetch(file)).json()) as Topology;
 			return (feature(t, t.objects.countries) as unknown as FeatureCollection<Geometry, { cc: string | null }>).features as CountryFeature[];
 		};
-		const [low, high] = await Promise.all([load('/data/countries-110m.json'), load('/data/countries-50m.json')]);
-		const have = new Set(low.map((f) => f.properties.cc));
+		const [low, extra] = await Promise.all([load('/data/countries-110m.json'), fetch('/data/countries-extra.json').then((r) => r.json())]);
 		shapes = [
 			...low.map((f) => ({ cc: f.properties.cc, d: path(f) ?? '' })),
-			...high.filter((f) => f.properties.cc && !have.has(f.properties.cc)).map((f) => ({ cc: f.properties.cc, d: path(f) ?? '', dot: path.centroid(f) as [number, number] }))
+			...(extra.features as CountryFeature[]).map((f) => ({ cc: f.properties.cc, d: path(f) ?? '', dot: path.centroid(f) as [number, number] }))
 		];
 	});
 
@@ -94,8 +95,8 @@
 			style:left="{hover.x}px"
 			style:top="{hover.y}px"
 		>
-			<div class="font-semibold">{countryName(hover.cc)}</div>
-			<div class="text-fixed-dark/65">{values.get(hover.cc) ? `${fmt(values.get(hover.cc)!)} ${unit}` : `No ${unit}`}</div>
+			<div class="font-semibold">{countryName(hover.cc)} | {hover.cc}</div>
+			<div class="text-fixed-dark/65">{values.get(hover.cc) ? `${fmtSum(values.get(hover.cc)!, !!approx?.has(hover.cc))} ${unit}` : `No ${unit}`}</div>
 		</div>
 	{/if}
 	<div class="text-sand/55 mt-2 flex items-center gap-2 text-[11px]">

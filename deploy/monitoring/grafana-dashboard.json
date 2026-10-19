@@ -49,7 +49,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [5m]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [5m]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -98,7 +98,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [$__range]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [$__range]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -147,7 +147,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" [$__range]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" [$__range]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -247,7 +247,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | status=~\"5..\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} [$__range])) * 100",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | status=~\"5..\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} [$__range])) * 100",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -297,7 +297,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [$__range])",
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [$__range]) by (job)",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -347,7 +347,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [1m]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [1m]))",
 					"legendFormat": "Visits / min",
 					"queryType": "range"
 				},
@@ -357,7 +357,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" [1m]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" [1m]))",
 					"legendFormat": "Page views / min",
 					"queryType": "range"
 				},
@@ -458,7 +458,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | label_format section=`{{ regexReplaceAll \"^/(groups|countries)/.+\" .page \"/$1/…\" }}` [$__range])))",
+					"expr": "topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | label_format section=`{{ if eq .page \"/\" }}Globe{{ else if eq .page \"/stats\" }}Statistics{{ else if hasPrefix \"/groups/\" .page }}Group pages{{ else if hasPrefix \"/countries/\" .page }}Country pages{{ else }}Other{{ end }}` [$__range])))",
 					"legendFormat": "{{section}}",
 					"queryType": "instant"
 				}
@@ -472,16 +472,39 @@
 					"calcs": [
 						"lastNotNull"
 					],
-					"values": false
+					"values": true,
+					"fields": "/^Last/"
 				}
 			},
+			"transformations": [
+				{
+					"id": "reduce",
+					"options": {
+						"reducers": [
+							"lastNotNull"
+						]
+					}
+				},
+				{
+					"id": "sortBy",
+					"options": {
+						"sort": [
+							{
+								"field": "Last *",
+								"desc": true
+							}
+						]
+					}
+				}
+			],
 			"fieldConfig": {
 				"defaults": {
 					"color": {
 						"mode": "fixed",
 						"fixedColor": "#7fb48d"
 					},
-					"unit": "short"
+					"unit": "short",
+					"displayName": "${__data.fields.Field}"
 				},
 				"overrides": []
 			}
@@ -507,7 +530,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | page=~\"/(groups|countries)/.+\" [$__range])))",
+					"expr": "topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | page=~\"/(groups|countries)/.+\" | label_format page=`{{ if hasPrefix \"/groups/\" .page }}{{ regexReplaceAll \"-\" (regexReplaceAll \"^/groups/(.*?)-?[0-9]+$\" .page \"${1}\") \" \" }}{{ else }}{{ regexReplaceAll \"^/countries/\" .page \"Country \" }}{{ end }}` [$__range])))",
 					"legendFormat": "{{page}}",
 					"queryType": "instant"
 				}
@@ -520,16 +543,39 @@
 					"calcs": [
 						"lastNotNull"
 					],
-					"values": false
+					"values": true,
+					"fields": "/^Last/"
 				}
 			},
+			"transformations": [
+				{
+					"id": "reduce",
+					"options": {
+						"reducers": [
+							"lastNotNull"
+						]
+					}
+				},
+				{
+					"id": "sortBy",
+					"options": {
+						"sort": [
+							{
+								"field": "Last *",
+								"desc": true
+							}
+						]
+					}
+				}
+			],
 			"fieldConfig": {
 				"defaults": {
 					"color": {
 						"mode": "fixed",
 						"fixedColor": "#7fb48d"
 					},
-					"unit": "short"
+					"unit": "short",
+					"displayName": "${__data.fields.Field}"
 				},
 				"overrides": []
 			}
@@ -568,7 +614,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum by (status) (count_over_time({job=\"jotiglobe\"} | json | __error__=\"\" [1m]))",
+					"expr": "sum by (status) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | __error__=\"\" [1m]))",
 					"legendFormat": "{{status}}",
 					"queryType": "range"
 				}
@@ -613,7 +659,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [5m])",
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
 					"legendFormat": "median",
 					"queryType": "range"
 				},
@@ -623,7 +669,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [5m])",
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
 					"legendFormat": "p95",
 					"queryType": "range"
 				}
@@ -1005,7 +1051,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "{job=\"jotiglobe\"} | json | line_format \"{{.method}} {{.path}}{{if .page}} {{.page}}{{end}} → {{.status}} · {{.duration}}s\"",
+					"expr": "{job=\"jotiglobe\"} | json path, page, entry, status, duration, method | line_format \"{{.method}} {{.path}}{{if .page}} {{.page}}{{end}} → {{.status}} · {{.duration}}s\"",
 					"legendFormat": "",
 					"queryType": "range"
 				}
