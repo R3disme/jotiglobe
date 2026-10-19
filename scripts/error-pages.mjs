@@ -36,16 +36,14 @@ const scout = (mark) => `<svg viewBox="0 0 240 200" width="240" height="200" ari
 <text x="150" y="40" font-family="Georgia,serif" font-size="34" font-weight="700" fill="#ecc15a">${mark}</text>
 </svg>`;
 
-export function errorPage(code) {
-	const [title, text] = errors[code] ?? ['Something went wrong', 'An unexpected error happened.'];
-	return `<!doctype html>
+const page = (title, body) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="dark">
-<title>${code} ${title} – JotiGlobe</title>
+<title>${title} – JotiGlobe</title>
 <style>
 body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0a140e;color:#f5f1e8;font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:30rem;padding:2rem 1.25rem;text-align:center}
@@ -56,18 +54,45 @@ p{color:rgba(245,241,232,.75);margin:0 0 1.5rem}
 a{color:#f5f1e8}
 .btn{display:inline-block;background:#7fb48d;color:#0a140e;font-weight:600;text-decoration:none;padding:.6rem 1.1rem;border-radius:.4rem}
 small{display:block;margin-top:1.5rem;color:rgba(245,241,232,.5)}
+ul{list-style:none;padding:0;margin:0 0 1.5rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(12rem,1fr));gap:.4rem;text-align:left}
+li a{display:block;padding:.45rem .7rem;border:1px solid rgba(255,255,255,.12);border-radius:.4rem;text-decoration:none}
+li a:hover{background:rgba(255,255,255,.06)}
+li b{color:#7fb48d;margin-right:.35rem}
 </style>
 </head>
 <body>
 <main>
-${scout(code >= 500 ? '!' : '?')}
-<p class="code">${code}</p>
-<h1>${title}</h1>
-<p>${text}</p>
-<a class="btn" href="/">Back to the globe</a>
-<small>If you believe this is an error, <a href="${ISSUES}?title=${encodeURIComponent(`${code} on JotiGlobe`)}" rel="noopener noreferrer">open an issue on GitHub</a>.</small>
+${body}
 </main>
 </body>
 </html>
 `;
+
+export function errorPage(code) {
+	const [title, text] = errors[code] ?? ['Something went wrong', 'An unexpected error happened.'];
+	return page(
+		`${code} ${title}`,
+		`${scout(code >= 500 ? '!' : '?')}
+<p class="code">${code}</p>
+<h1>${title}</h1>
+<p>${text}</p>
+<a class="btn" href="/">Back to the globe</a>
+<small>If you believe this is an error, <a href="${ISSUES}?title=${encodeURIComponent(`${code} on JotiGlobe`)}" rel="noopener noreferrer">open an issue on GitHub</a>.</small>`
+	);
+}
+
+export function errorIndex() {
+	const items = Object.entries(errors)
+		.map(([code, [title]]) => `<li><a href="/errors/${code}"><b>${code}</b> ${title}</a></li>`)
+		.join('\n');
+	return page(
+		'Error pages',
+		`${scout('?')}
+<h1>Error pages</h1>
+<p>Every error JotiGlobe can show. Click one to see it, with its real status code.</p>
+<ul>
+${items}
+</ul>
+<a class="btn" href="/">Back to the globe</a>`
+	);
 }

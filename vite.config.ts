@@ -4,7 +4,7 @@ import { defineConfig, loadEnv, type Connect, type Plugin } from 'vite';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
-import { errorPage, errors } from './scripts/error-pages.mjs';
+import { errorIndex, errorPage, errors } from './scripts/error-pages.mjs';
 
 // Same security headers as deploy/nginx-jotiglobe.conf, so `pnpm preview` shows CSP problems before deploying.
 const CSP =
@@ -33,6 +33,10 @@ function errorPages(): Plugin {
 		(dirs: string[]): Connect.NextHandleFunction =>
 		(req, res, next) => {
 			const path = (req.url ?? '/').split('?')[0];
+			if (/^\/errors\/?$/.test(path)) {
+				res.setHeader('Content-Type', 'text/html; charset=utf-8');
+				return void res.end(errorIndex());
+			}
 			const forced = /^\/errors\/(\d{3})\/?$/.exec(path)?.[1];
 			const lost = !forced && req.method === 'GET' && req.headers.accept?.includes('text/html') && !appRoute.test(path) && !dirs.some((d) => existsSync(join(d, path)));
 			if (!forced && !lost) return next();
@@ -46,6 +50,7 @@ function errorPages(): Plugin {
 		configureServer: (s) => void s.middlewares.use(handler([s.config.root, s.config.publicDir])),
 		configurePreviewServer: (s) => void s.middlewares.use(handler([s.config.build.outDir])),
 		generateBundle() {
+			this.emitFile({ type: 'asset', fileName: '_errors/index.html', source: errorIndex() });
 			for (const code of Object.keys(errors)) this.emitFile({ type: 'asset', fileName: `_errors/${code}.html`, source: errorPage(+code) });
 		}
 	};
