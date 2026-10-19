@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
 	import PrivacyNotice from './lib/PrivacyNotice.svelte';
-	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
+	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, fmtParticipants, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
 	import { route, navigate, setParams } from './lib/router.svelte';
 	import { cn } from './lib/utils';
 	import Search from '@lucide/svelte/icons/search';
@@ -329,7 +329,7 @@
 							<span class="min-w-0 flex-1">
 								<span class="block text-sm leading-snug font-medium">{g.name}</span>
 								<span class="text-sand/55 flex items-center gap-1 text-xs">
-									<MapPin class="size-3" />{g.city || 'Unknown place'}{#if participants.get(g.id)} · {fmt(participants.get(g.id)!)} participants{/if}{#if g.approx}<span class="opacity-70"> · approximate on the map</span>{/if}
+									<MapPin class="size-3" />{g.city || 'Unknown place'}{#if participants.get(g.id)} · {fmtParticipants(participants.get(g.id)!)} participants{/if}{#if g.approx}<span class="opacity-70"> · approximate on the map</span>{/if}
 								</span>
 							</span>
 							<a

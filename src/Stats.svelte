@@ -11,6 +11,7 @@
 		groupPath,
 		wosmRegions,
 		fmt,
+		fmtParticipants,
 		fmtDate,
 		fmtWeekend,
 		type YearInfo,
@@ -24,7 +25,7 @@
 	import Maximize from '@lucide/svelte/icons/maximize-2';
 	import X from '@lucide/svelte/icons/x';
 
-	type Row = { key: string; label: string; value: number; cc?: string; href?: string; sub?: string };
+	type Row = { key: string; label: string; value: number; capped?: boolean; cc?: string; href?: string; sub?: string };
 	type YearData = { year: number; snapshot: string; groups: Group[]; profiles: Map<number, Profile> };
 	type Metric = 'groups' | 'participants';
 
@@ -186,7 +187,7 @@
 					.sort(byValue)
 			: []
 	);
-	const largestRows = $derived<Row[]>(s ? s.largest.map(({ g, n }) => ({ key: String(g.id), label: g.name, value: n, cc: country ? undefined : g.cc, href: groupPath(g) })) : []);
+	const largestRows = $derived<Row[]>(s ? s.largest.map(({ g, n }) => ({ key: String(g.id), label: g.name, value: n, capped: n >= 1000, cc: country ? undefined : g.cc, href: groupPath(g) })) : []);
 
 	/** competition ranking: equal values share a rank (1, 2, 2, 4) */
 	function ranked(rows: Row[]) {
@@ -279,7 +280,7 @@
 			{:else}
 				<span class="min-w-0 flex-1 truncate">{r.label}{#if r.sub}<span class="text-sand/45"> · {r.sub}</span>{/if}</span>
 			{/if}
-			<span class="font-medium tabular-nums">{fmt(r.value)}</span>
+			<span class="font-medium tabular-nums">{r.capped ? fmtParticipants(r.value) : fmt(r.value)}</span>
 		</div>
 		<div class="mt-1 ml-8 h-1.5 rounded-full bg-white/[0.06]">
 			<div class="bg-moss h-full rounded-full" style:width="{(r.value / max) * 100}%"></div>
@@ -517,7 +518,7 @@
 							<li class="border-b border-white/5">
 								<a href={groupPath(g)} class="flex items-baseline gap-2 py-1.5 text-sm hover:underline">
 									<span class="min-w-0 flex-1 truncate">{g.name}<span class="text-sand/45"> · {g.city || countryName(g.cc)}</span></span>
-									{#if n != null}<span class="tabular-nums">{fmt(n)}</span>{/if}
+									{#if n != null}<span class="tabular-nums">{fmtParticipants(n)}</span>{/if}
 								</a>
 							</li>
 						{:else}

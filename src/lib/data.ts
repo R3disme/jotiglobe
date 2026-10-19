@@ -94,6 +94,8 @@ export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lo
 }
 
 export const fmt = (n: number) => n.toLocaleString('en-GB');
+// the directory doesn't take more than 1,000 participants per group
+export const fmtParticipants = (n: number) => (n >= 1000 ? '1,000+' : fmt(n));
 export const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
 export function fmtWeekend(y: YearInfo) {
 	const s = new Date(y.start),
