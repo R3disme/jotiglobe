@@ -91,6 +91,7 @@
 	const view = { λ: -10, φ: -25, k: 1 };
 	const target = { λ: -10, φ: -25, k: 1 };
 	let flagAlpha = 0;
+	let bgAlpha = 0.42; // how strongly the other countries' flags show
 	let dragging = false;
 	let reducedMotion = false;
 
@@ -132,11 +133,27 @@
 			.then((r) => r.json())
 			.then((t: Topology) => (feature(t, t.objects.countries) as unknown as FeatureCollection<Geometry, { cc: string | null }>).features as CountryFeature[]);
 	let highRequested = false;
+	let warmUntil = 0; // frames that build caches don't count as a slow machine
 	function loadHigh() {
 		highRequested = true;
 		loadTopo('/data/countries-50m.json').then((f) => {
-			high = f;
-			detailed = true;
+			// prepare the flag shapes in small batches between frames, not all in the first zoomed-in frame
+			let i = 0;
+			const step = () => {
+				const end = Math.min(f.length, i + 12);
+				for (; i < end; i++) {
+					const a = flagAreas(f[i]);
+					geoBox(a.main);
+					for (const r of a.rest) geoBox(r);
+				}
+				if (i < f.length) setTimeout(step, 0);
+				else {
+					warmUntil = performance.now() + 3000;
+					high = f;
+					detailed = true;
+				}
+			};
+			step();
 		});
 	}
 
@@ -161,26 +178,52 @@
 		}
 		return g;
 	}
-	function pinnedRect(cc: string, f: CountryFeature) {
+	// the flag as a rectangle on the ground (degrees), so it turns and tilts with the land instead of facing the screen
+	type Place = { lon0: number; lat0: number; dLon: number; dLat: number; n: number };
+	function placeFlag(cc: string, f: CountryFeature): Place | null {
 		const g = geoBox(f);
 		if (geoDistance(g.c, [-view.λ, -view.φ]) > Math.PI / 2 + 0.25) return null;
-		const p = projection(g.c);
-		if (!p) return null;
-		const R = projection.scale();
-		const sc = Math.max((g.w * R) / 4, (g.h * R) / 3);
-		if (sc < 1) return null;
+		const sc = Math.max(g.w / 4, g.h / 3);
+		if (sc * projection.scale() < 1) return null;
 		const [fx, fy] = flagFit[cc] ?? [0.5, 0.5];
-		return { x: p[0] - fx * 4 * sc, y: p[1] - fy * 3 * sc, w: 4 * sc, h: 3 * sc };
+		const dLon = (4 * sc) / rad / Math.max(0.2, Math.cos(g.c[1] * rad)),
+			dLat = (3 * sc) / rad;
+		// big flags are drawn in pieces so they follow the curve of the globe
+		const n = 4 * sc > 0.6 ? 3 : 4 * sc > 0.25 ? 2 : 1;
+		return { lon0: g.c[0] - fx * dLon, lat0: g.c[1] + fy * dLat, dLon, dLat, n };
+	}
+	function drawOnSurface(ctx: CanvasRenderingContext2D, img: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, pl: Place) {
+		const at = (u: number, v: number) => projection([pl.lon0 + u * pl.dLon, Math.max(-89.9, Math.min(89.9, pl.lat0 - v * pl.dLat))]);
+		const e = pl.n > 1 ? 0.04 : 0; // pieces overlap a little so no seams show
+		for (let i = 0; i < pl.n; i++)
+			for (let j = 0; j < pl.n; j++) {
+				const u0 = Math.max(0, i / pl.n - e),
+					u1 = Math.min(1, (i + 1) / pl.n + e),
+					v0 = Math.max(0, j / pl.n - e),
+					v1 = Math.min(1, (j + 1) / pl.n + e);
+				const a = at(u0, v0),
+					b = at(u1, v0),
+					c = at(u0, v1);
+				if (!a || !b || !c) continue;
+				const cw = (u1 - u0) * sw,
+					ch = (v1 - v0) * sh;
+				ctx.save();
+				ctx.transform((b[0] - a[0]) / cw, (b[1] - a[1]) / cw, (c[0] - a[0]) / ch, (c[1] - a[1]) / ch, a[0], a[1]);
+				ctx.drawImage(img, sx + u0 * sw, sy + v0 * sh, cw, ch, 0, 0, cw, ch);
+				ctx.restore();
+			}
 	}
 	/** outlying areas whose middle the main flag doesn't reach (Alaska, Hawaii, Svalbard…) */
-	function outlying(f: CountryFeature, main: { x: number; y: number; w: number; h: number } | null) {
+	function outlying(f: CountryFeature, main: Place | null) {
 		return flagAreas(f).rest.filter((a) => {
-			const p = projection(geoBox(a).c);
-			return !main || !p || p[0] < main.x || p[1] < main.y || p[0] > main.x + main.w || p[1] > main.y + main.h;
+			if (!main) return true;
+			const [lon, lat] = geoBox(a).c;
+			const dl = (((lon - main.lon0) % 360) + 360) % 360;
+			return dl > main.dLon || lat > main.lat0 || lat < main.lat0 - main.dLat;
 		});
 	}
 
-	// 0 = full, 1 = lower resolution, 2 = plain dots, no background flags, 30 fps
+	// 0 = full, 1 = lower resolution, 2 = plain dots and 30 fps
 	let quality = 0;
 
 	function findFeature(cc: string | null) {
@@ -471,8 +514,9 @@
 		view.φ += (target.φ - view.φ) * ease;
 		view.k += (target.k - view.k) * ease;
 		flagAlpha += ((_selected ? (_focused ? 0.45 : 0.9) : 0) - flagAlpha) * (1 - Math.exp(-dt * 4));
+		bgAlpha += ((_selected ? 0.18 : view.k > 2 ? 0.6 : 0.42) - bgAlpha) * (1 - Math.exp(-dt * 4));
 		// nothing moved or changed: keep the last frame
-		const key = `${spinning || dragging} ${view.λ.toFixed(2)} ${view.φ.toFixed(2)} ${view.k.toFixed(3)} ${w}x${h} ${hoverCc} ${_selected} ${flagAlpha.toFixed(2)} ${_dots.length} ${!!atlasImg} ${high.length} ${low.length} ${quality}`;
+		const key = `${spinning || dragging} ${view.λ.toFixed(2)} ${view.φ.toFixed(2)} ${view.k.toFixed(3)} ${w}x${h} ${hoverCc} ${_selected} ${flagAlpha.toFixed(2)} ${bgAlpha.toFixed(2)} ${_dots.length} ${!!atlasImg} ${high.length} ${low.length} ${quality}`;
 		if (key === lastKey && !_focused && !_me) return false;
 		lastKey = key;
 
@@ -541,19 +585,18 @@
 		ctx.stroke(active);
 		ctx.stroke(hovered);
 
-		const settled = !spinning && !dragging && Math.abs(target.λ - view.λ) + Math.abs(target.φ - view.φ) < 0.05 && Math.abs(target.k - view.k) < 0.01;
-		if (atlasImg && (quality < 2 || settled)) {
+		// flags are drawn solid, then the land colour on top, so overlapping pieces never show seams
+		const tile = (cc: string): [number, number] => [(atlasIndex[cc] % atlas.cols) * tileW, Math.floor(atlasIndex[cc] / atlas.cols) * tileH];
+		if (atlasImg) {
 			const img = atlasImg;
-			ctx.globalAlpha = _selected ? 0.18 : view.k > 2 ? 0.6 : 0.42;
 			const paint = (cc: string, shape: CountryFeature, clip: Path2D | null) => {
-				const r = pinnedRect(cc, shape);
-				if (!r) return null;
-				const i = atlasIndex[cc];
+				const pl = placeFlag(cc, shape);
+				if (!pl) return null;
 				ctx.save();
 				ctx.clip(clip ?? new Path2D(pathP(shape) ?? ''));
-				ctx.drawImage(img, (i % atlas.cols) * tileW, Math.floor(i / atlas.cols) * tileH, tileW, tileH, r.x, r.y, r.w, r.h);
+				drawOnSurface(ctx, img, ...tile(cc), tileW, tileH, pl);
 				ctx.restore();
-				return r;
+				return pl;
 			};
 			for (const [f, p2] of shapes) {
 				const cc = f.properties.cc;
@@ -561,6 +604,9 @@
 				const main = paint(cc, flagAreas(f).main, p2);
 				for (const area of outlying(f, main)) if (geoBox(area).w * projection.scale() > 3) paint(cc, area, null);
 			}
+			ctx.globalAlpha = 1 - bgAlpha;
+			ctx.fillStyle = '#22402d';
+			ctx.fill(active);
 			ctx.globalAlpha = 1;
 			// borders on top, so they stay easy to see on any flag
 			ctx.strokeStyle = 'rgba(6, 14, 9, 0.85)';
@@ -573,25 +619,36 @@
 		// _selected country: flag clipped to its outline
 		const sel = findFeature(_selected) ?? (flagAlpha > 0.01 ? findFeature(lastSelected) : undefined);
 		if (_selected) lastSelected = _selected;
-		if (sel && flagAlpha > 0.01) {
-			const img = flag(sel.properties.cc!);
-			if (img) {
+		// starts from the small atlas flag the country already had, so nothing blinks; the full flag takes over once loaded
+		const shown = sel ? Math.max(flagAlpha, atlasImg && atlasIndex[sel.properties.cc!] != null ? bgAlpha : 0) : 0;
+		if (sel && flagAlpha > 0.01 && shown > 0.01) {
+			const cc = sel.properties.cc!;
+			const svg = flag(cc);
+			const src: [CanvasImageSource, number, number, number, number] | null = svg
+				? [svg, 0, 0, svg.width, svg.height]
+				: atlasImg && atlasIndex[cc] != null
+					? [atlasImg, ...tile(cc), tileW, tileH]
+					: null;
+			if (src) {
 				const areas = flagAreas(sel);
-				const cc = sel.properties.cc!;
 				const drawFlag = (clip: CountryFeature, pin: CountryFeature) => {
-					const r = pinnedRect(cc, pin);
-					if (!r) return null;
+					const pl = placeFlag(cc, pin);
+					if (!pl) return null;
 					ctx.save();
 					ctx.beginPath();
 					path(clip);
 					ctx.clip();
-					ctx.drawImage(img, r.x, r.y, r.w, r.h);
+					drawOnSurface(ctx, ...src, pl);
 					ctx.restore();
-					return r;
+					return pl;
 				};
-				ctx.globalAlpha = flagAlpha;
 				const main = drawFlag(sel, areas.main);
 				for (const area of outlying(sel, main)) drawFlag(area, area);
+				ctx.globalAlpha = 1 - shown;
+				ctx.fillStyle = '#22402d';
+				ctx.beginPath();
+				path(sel);
+				ctx.fill();
 				ctx.globalAlpha = 1;
 			}
 			ctx.beginPath();
@@ -772,7 +829,7 @@
 			interval = interval * 0.95 + dt * 1000 * 0.05;
 			canvas.dataset.cost = cost.toFixed(1);
 			// only steps down, and not while the first frames build their caches, so it never flips back and forth
-			if (now - started < 6000) return;
+			if (now - started < 6000 || now < warmUntil) return;
 			if ((cost > 20 || interval > (quality >= 2 ? 80 : 50)) && quality < 2 && now - changed > 4000) {
 				quality++;
 				changed = now;
