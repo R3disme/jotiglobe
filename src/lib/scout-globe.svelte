@@ -26,6 +26,8 @@
 		oncountry,
 		idleMs = 10000,
 		controls = true,
+		autoSpin = true,
+		spinSpeed = 6,
 		highlight = null,
 		me = null,
 		class: className = ''
@@ -49,6 +51,9 @@
 		oncountry?: (cc: string) => void;
 		idleMs?: number;
 		controls?: boolean;
+		autoSpin?: boolean;
+		/** degrees per second */
+		spinSpeed?: number;
 		class?: string;
 	} = $props();
 
@@ -86,7 +91,6 @@
 	let flagAlpha = 0;
 	let dragging = false;
 	let reducedMotion = false;
-	const AUTO_SPEED = 6; // degrees / second
 
 	// Flags are rasterised once (drawing a scaled SVG every frame is slow)
 	const flagCache = new Map<string, HTMLCanvasElement | null>();
@@ -389,8 +393,7 @@
 
 	function draw(ctx: CanvasRenderingContext2D, dt: number) {
 		const { w, h } = size;
-		const autoSpin = !selected && !dragging && !reducedMotion && performance.now() - lastInteraction > 2500;
-		if (autoSpin) target.λ += AUTO_SPEED * dt;
+		if (autoSpin && !selected && !dragging && !reducedMotion && performance.now() - lastInteraction > 2500) target.λ += spinSpeed * dt;
 		if (!selected && !dragging && performance.now() - lastInteraction > idleMs) target.k = 1;
 
 		const ease = 1 - Math.exp(-dt * (reducedMotion ? 30 : 3.2));

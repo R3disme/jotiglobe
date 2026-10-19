@@ -16,6 +16,7 @@
 	import Loader from '@lucide/svelte/icons/loader-circle';
 	import GitFork from '@lucide/svelte/icons/git-fork';
 	import List from '@lucide/svelte/icons/list';
+	import GlobeIcon from '@lucide/svelte/icons/globe';
 
 	// --- data ---------------------------------------------------------------------------------
 	let groups = $state<Group[]>([]);
@@ -176,6 +177,32 @@
 
 	const fmtKm = (km: number) => (km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km).toLocaleString('en-GB')} km`);
 
+	let autoSpin = $state(true);
+	try {
+		autoSpin = localStorage.getItem('jotiglobe:autospin') !== '0';
+	} catch {}
+	const toggleSpin = () => {
+		autoSpin = !autoSpin;
+		try {
+			localStorage.setItem('jotiglobe:autospin', autoSpin ? '1' : '0');
+		} catch {}
+	};
+
+	let globeMode = $state(false);
+	let exitVisible = $state(true);
+	let exitTimer: ReturnType<typeof setTimeout> | undefined;
+	function showExit() {
+		exitVisible = true;
+		clearTimeout(exitTimer);
+		exitTimer = setTimeout(() => (exitVisible = false), 2500);
+	}
+	function enterGlobeMode() {
+		focused = null;
+		selected = null;
+		globeMode = true;
+		showExit();
+	}
+
 	let privacyOpen = $state(false);
 	let aboutOpen = $state(false);
 </script>
@@ -185,25 +212,35 @@
 </svelte:head>
 
 <div class="relative h-dvh w-full overflow-hidden">
-	<ScoutGlobe {groups} {names} {me} bind:selected bind:focused onopen={openGroup} class="absolute inset-0" />
+	<ScoutGlobe
+		{groups}
+		{names}
+		{me}
+		bind:selected
+		bind:focused
+		onopen={openGroup}
+		autoSpin={autoSpin || globeMode}
+		spinSpeed={globeMode ? 3.5 : 6}
+		controls={!globeMode}
+		class="absolute inset-0"
+	/>
 
-	<!-- Title + stats -->
+	{#if globeMode}
+		<button
+			type="button"
+			onclick={() => (globeMode = false)}
+			class={cn(
+				'text-sand absolute top-4 right-4 z-20 flex items-center gap-2 rounded-md border border-white/15 bg-black/40 px-3 py-2 text-sm backdrop-blur transition-opacity duration-500',
+				exitVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+			)}
+		>
+			<X class="size-4" /> Exit globe mode
+		</button>
+	{:else}
 	<header class="pointer-events-none absolute top-0 left-0 z-10 max-w-[calc(100%-2rem)] p-4 sm:p-6">
 		<h1 class="text-3xl leading-tight font-semibold sm:text-4xl">JotiGlobe</h1>
 		<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
 			<p class="text-sand/70 text-sm">Scout groups signed up for JOTA-JOTI{year ? `, ${fmtWeekend(year)}` : ''}</p>
-			{#if years.length}
-				<label class="pointer-events-auto">
-					<span class="sr-only">Year</span>
-					<select
-						value={year?.year ?? ''}
-						onchange={pickYear}
-						class="focus:border-moss rounded-md border border-white/20 bg-black/25 px-2 py-0.5 text-sm backdrop-blur outline-none [&>option]:bg-forest-900"
-					>
-						{#each years as y (y.year)}<option value={y.year}>{y.year}</option>{/each}
-					</select>
-				</label>
-			{/if}
 		</div>
 		<div class="mt-4 flex gap-6">
 			{#if loading}
@@ -461,6 +498,29 @@
 			{/if}
 		</footer>
 	</aside>
+	<div class="absolute bottom-[4.5rem] left-3 z-10 flex items-center gap-1 rounded-lg border border-white/10 bg-black/30 p-1 text-sm backdrop-blur md:bottom-3">
+		{#if years.length}
+			<label>
+				<span class="sr-only">Year</span>
+				<select
+					value={year?.year ?? ''}
+					onchange={pickYear}
+					class="focus:border-moss rounded-md border border-transparent bg-transparent px-2 py-1.5 outline-none hover:bg-white/10 [&>option]:bg-forest-900"
+				>
+					{#each years as y (y.year)}<option value={y.year}>{y.year}</option>{/each}
+				</select>
+			</label>
+		{/if}
+		<button type="button" role="switch" aria-checked={autoSpin} onclick={toggleSpin} class="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-white/10">
+			<span class={cn('relative h-5 w-9 rounded-full transition-colors', autoSpin ? 'bg-moss' : 'bg-white/20')}>
+				<span class={cn('bg-sand absolute top-0.5 left-0.5 size-4 rounded-full shadow transition-transform', autoSpin && 'translate-x-4')}></span>
+			</span>
+			AutoSpin
+		</button>
+		<button type="button" onclick={enterGlobeMode} class="flex items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-white/10" title="Just the globe, slowly spinning">
+			<GlobeIcon class="size-4" /> Globe mode
+		</button>
+	</div>
 	{#if !panelOpen}
 		<button
 			type="button"
@@ -470,6 +530,9 @@
 			<List class="size-4" /> Show list
 		</button>
 	{/if}
+	{/if}
 </div>
+
+<svelte:window onkeydown={(e) => globeMode && e.key === 'Escape' && (globeMode = false)} onpointermove={() => globeMode && showExit()} onpointerdown={() => globeMode && showExit()} />
 
 <PrivacyNotice bind:open={privacyOpen} />
