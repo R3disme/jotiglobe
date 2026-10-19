@@ -26,8 +26,9 @@ function get<T>(url: string, optional = false): Promise<T> {
 		cache.set(
 			url,
 			fetch(url).then((r) => {
+				// a missing optional file: 404 from nginx, or the index.html fallback from the Vite dev server
+				if (optional && (r.status === 404 || !r.headers.get('content-type')?.includes('json'))) return null;
 				if (r.ok) return r.json();
-				if (optional && r.status === 404) return null;
 				throw new Error(`${url}: ${r.status}`);
 			})
 		);

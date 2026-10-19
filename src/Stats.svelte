@@ -193,7 +193,7 @@
 <div class="min-h-dvh">
 	<header class="bg-forest-950/85 sticky top-0 z-10 border-b border-white/10 backdrop-blur">
 		<div class="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6">
-			<a href="/" class="text-sand/70 hover:text-sand inline-flex items-center gap-1.5 text-sm"><ArrowLeft class="size-4" /> Globe</a>
+			<a href={year && year !== years[0]?.year ? `/?year=${year}` : '/'} class="text-sand/70 hover:text-sand inline-flex items-center gap-1.5 text-sm"><ArrowLeft class="size-4" /> Globe</a>
 			<h1 class="flex-1 text-xl font-semibold">Statistics</h1>
 			<label class="flex items-center gap-2 text-sm">
 				<span class="text-sand/60">Year</span>

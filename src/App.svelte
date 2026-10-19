@@ -22,21 +22,47 @@
 	let snapshot = $state('');
 	let loading = $state(true);
 	let loadError = $state(false);
-	let year = $state<YearInfo | null>(null);
+	let years = $state<YearInfo[]>([]);
+	// ?year= picks an older year; without it the globe shows the newest one
+	const year = $derived(years.find((y) => String(y.year) === new URLSearchParams(route.search).get('year')) ?? years[0] ?? null);
 	onMount(async () => {
 		try {
-			// the globe always shows the newest year; older years are on /stats
-			year = (await loadYears())[0];
-			const d = await loadGroups(year.year);
-			groups = d.groups;
-			snapshot = fmtDate(d.snapshot);
-			const cc = new URLSearchParams(route.search).get('country')?.toUpperCase();
-			if (cc && groups.some((g) => g.cc === cc)) pickCountry(cc);
+			years = await loadYears();
 		} catch {
 			loadError = true;
+			loading = false;
 		}
-		loading = false;
 	});
+	let firstLoad = true;
+	$effect(() => {
+		const y = year?.year;
+		if (y == null) return;
+		let stale = false;
+		loading = true;
+		loadGroups(y)
+			.then((d) => {
+				if (stale) return;
+				groups = d.groups;
+				snapshot = fmtDate(d.snapshot);
+				const cc = firstLoad ? new URLSearchParams(route.search).get('country')?.toUpperCase() : (selected ?? undefined);
+				focused = null;
+				selected = null;
+				if (cc && groups.some((g) => g.cc === cc)) pickCountry(cc);
+				firstLoad = false;
+				loading = false;
+			})
+			.catch(() => {
+				if (stale) return;
+				loadError = true;
+				loading = false;
+			});
+		return () => (stale = true);
+	});
+	const pickYear = (e: Event) => {
+		const v = (e.currentTarget as HTMLSelectElement).value;
+		setParams({ year: v === String(years[0]?.year) ? null : v });
+	};
+	const yearQuery = $derived(year && year !== years[0] ? `?year=${year.year}` : '');
 
 	const perCountry = $derived.by(() => {
 		const m = new Map<string, Group[]>();
@@ -162,7 +188,21 @@
 	<!-- Title + stats -->
 	<header class="pointer-events-none absolute top-0 left-0 z-10 max-w-[calc(100%-2rem)] p-4 sm:p-6">
 		<h1 class="text-3xl leading-tight font-semibold sm:text-4xl">JotiGlobe</h1>
-		<p class="text-sand/70 mt-1 text-sm">Scout groups signed up for JOTA-JOTI{year ? `, ${fmtWeekend(year)}` : ''}</p>
+		<div class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+			<p class="text-sand/70 text-sm">Scout groups signed up for JOTA-JOTI{year ? `, ${fmtWeekend(year)}` : ''}</p>
+			{#if years.length}
+				<label class="pointer-events-auto">
+					<span class="sr-only">Year</span>
+					<select
+						value={year?.year ?? ''}
+						onchange={pickYear}
+						class="focus:border-moss rounded-md border border-white/20 bg-black/25 px-2 py-0.5 text-sm backdrop-blur outline-none [&>option]:bg-forest-900"
+					>
+						{#each years as y (y.year)}<option value={y.year}>{y.year}</option>{/each}
+					</select>
+				</label>
+			{/if}
+		</div>
 		<div class="mt-4 flex gap-6">
 			{#if loading}
 				<div class="h-10 w-52 animate-pulse rounded-md bg-white/10"></div>
@@ -192,7 +232,7 @@
 			</button>
 		{/if}
 		<a
-			href="/stats"
+			href="/stats{yearQuery}"
 			class="text-sand pointer-events-auto mt-3 flex w-fit items-center gap-2 rounded-md border border-white/20 bg-black/25 px-3 py-2 text-sm backdrop-blur transition hover:border-white/40 hover:bg-black/40"
 		>
 			<ChartBar class="size-4" /> Statistics
@@ -406,7 +446,7 @@
 			<a href="https://www.jotajoti.info/directory" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">directory on jotajoti.info</a>{snapshot ? ` (${snapshot})` : ''}.
 			Locations are guessed from the town name, so some dots are a bit off.
 			<button type="button" onclick={() => (privacyOpen = true)} class="hover:text-sand underline underline-offset-2">Privacy</button> ·
-			<a href="/stats" class="hover:text-sand underline underline-offset-2">Statistics</a> ·
+			<a href="/stats{yearQuery}" class="hover:text-sand underline underline-offset-2">Statistics</a> ·
 			<a href="https://github.com/R3disme/jotiglobe" target="_blank" rel="noopener noreferrer" class="hover:text-sand underline underline-offset-2">Source code</a> ·
 			<a href="#about" onclick={(e) => (e.preventDefault(), (aboutOpen = !aboutOpen))} class="hover:text-sand underline underline-offset-2">Credits</a>
 			{#if aboutOpen}
