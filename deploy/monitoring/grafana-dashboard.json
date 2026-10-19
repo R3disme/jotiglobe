@@ -49,7 +49,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [5m]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" [5m]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -98,7 +98,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [$__range]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" [$__range]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -147,12 +147,12 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" [$__range]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | page!=\"\" [$__range]))",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
 			],
-			"description": "Pages opened in the selected time range, including moving between pages",
+			"description": "Pages opened by visitors who chose to share them (opt-in), including moving between pages",
 			"options": {
 				"reduceOptions": {
 					"calcs": [
@@ -247,7 +247,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | status=~\"5..\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} [$__range])) * 100",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | status=~\"5..\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} [$__range])) * 100",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -297,7 +297,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [$__range]) by (job)",
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [$__range]) by (job)",
 					"legendFormat": "",
 					"queryType": "instant"
 				}
@@ -347,7 +347,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | entry=\"1\" [1m]))",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" [1m]))",
 					"legendFormat": "Visits / min",
 					"queryType": "range"
 				},
@@ -357,8 +357,8 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" [1m]))",
-					"legendFormat": "Page views / min",
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | page!=\"\" [1m]))",
+					"legendFormat": "Page views / min (opt-in)",
 					"queryType": "range"
 				},
 				{
@@ -458,7 +458,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sort_desc(topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | label_format section=`{{ if eq .page \"/\" }}Globe{{ else if eq .page \"/stats\" }}Statistics{{ else if hasPrefix \"/groups/\" .page }}Group pages{{ else if hasPrefix \"/countries/\" .page }}Country pages{{ else }}Other{{ end }}` [$__range]))))",
+					"expr": "sort_desc(topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | page!=\"\" | label_format page=`{{ urldecode .page }}` | label_format section=`{{ if eq .page \"/\" }}Globe{{ else if eq .page \"/stats\" }}Statistics{{ else if hasPrefix \"/groups/\" .page }}Group pages{{ else if hasPrefix \"/countries/\" .page }}Country pages{{ else }}Other{{ end }}` [$__range]))))",
 					"legendFormat": "{{section}}",
 					"queryType": "instant"
 				}
@@ -507,7 +507,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sort_desc(topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | page=~\"/(groups|countries)/.+\" | label_format page=`{{ if hasPrefix \"/groups/\" .page }}{{ regexReplaceAll \"-\" (regexReplaceAll \"^/groups/(.*?)-?[0-9]+$\" .page \"${1}\") \" \" }}{{ else }}{{ regexReplaceAll \"^/countries/\" .page \"Country \" }}{{ end }}` [$__range]))))",
+					"expr": "sort_desc(topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | page=~\"/(groups|countries)/.+\" | label_format page=`{{ if hasPrefix \"/groups/\" .page }}{{ regexReplaceAll \"-\" (regexReplaceAll \"^/groups/(.*?)-?[0-9]+$\" .page \"${1}\") \" \" }}{{ else }}{{ regexReplaceAll \"^/countries/\" .page \"Country \" }}{{ end }}` [$__range]))))",
 					"legendFormat": "{{page}}",
 					"queryType": "instant"
 				}
@@ -568,7 +568,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "sum by (status) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | __error__=\"\" [1m]))",
+					"expr": "sum by (status) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | __error__=\"\" [1m]))",
 					"legendFormat": "{{status}}",
 					"queryType": "range"
 				}
@@ -613,7 +613,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
 					"legendFormat": "median",
 					"queryType": "range"
 				},
@@ -623,7 +623,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path!=\"/hit\" | unwrap duration | __error__=\"\" [5m]) by (job)",
 					"legendFormat": "p95",
 					"queryType": "range"
 				}
@@ -1005,7 +1005,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "{job=\"jotiglobe\"} | json path, page, entry, status, duration, method | line_format \"{{.method}} {{.path}}{{if .page}} {{.page}}{{end}} → {{.status}} · {{.duration}}s\"",
+					"expr": "{job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | line_format \"{{.method}} {{.path}}{{if .page}} {{.page}}{{end}} → {{.status}} · {{.duration}}s\"",
 					"legendFormat": "",
 					"queryType": "range"
 				}
@@ -1015,6 +1015,321 @@
 				"wrapLogMessage": false,
 				"sortOrder": "Descending",
 				"enableLogDetails": true
+			}
+		},
+		{
+			"id": 24,
+			"type": "row",
+			"title": "Globe performance",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 62,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 25,
+			"type": "stat",
+			"title": "Typical frame time",
+			"gridPos": {
+				"x": 0,
+				"y": 63,
+				"w": 6,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | unwrap ms | __error__=\"\" [$__range]) by (job)",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Median time the globe needs to draw a frame, reported once per visit",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "ms",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 1
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 26,
+			"type": "stat",
+			"title": "Typical frame rate",
+			"gridPos": {
+				"x": 6,
+				"y": 63,
+				"w": 6,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | unwrap fps | __error__=\"\" [$__range]) by (job)",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Median frames per second",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 0
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 27,
+			"type": "stat",
+			"title": "Visits that lowered quality",
+			"gridPos": {
+				"x": 12,
+				"y": 63,
+				"w": 6,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | q!=\"0\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" [$__range])) * 100",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Share of visits where the globe had to lower its quality to keep up",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 1
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 28,
+			"type": "stat",
+			"title": "Visits measured",
+			"gridPos": {
+				"x": 18,
+				"y": 63,
+				"w": 6,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" [$__range]))",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Visits that stayed long enough on a globe to be measured",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 29,
+			"type": "timeseries",
+			"title": "Frame time",
+			"gridPos": {
+				"x": 0,
+				"y": 67,
+				"w": 12,
+				"h": 8
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | unwrap ms | __error__=\"\" [1h]) by (job)",
+					"legendFormat": "median",
+					"queryType": "range"
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | unwrap ms | __error__=\"\" [1h]) by (job)",
+					"legendFormat": "slowest 5 %",
+					"queryType": "range"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "ms",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			},
+			"options": {
+				"tooltip": {
+					"mode": "multi"
+				}
+			}
+		},
+		{
+			"id": 30,
+			"type": "bargauge",
+			"title": "Quality the globe settled on",
+			"gridPos": {
+				"x": 12,
+				"y": 67,
+				"w": 12,
+				"h": 8
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sort_desc(sum by (level) (count_over_time({job=\"jotiglobe\"} | json path, perf, q, ms, fps | path=\"/hit\" | perf=\"1\" | label_format level=`{{ if eq .q \"0\" }}Full quality{{ else if eq .q \"1\" }}Lower resolution{{ else }}Plain dots, 30 fps{{ end }}` [$__range])))",
+					"legendFormat": "{{level}}",
+					"queryType": "instant"
+				}
+			],
+			"description": "Slow devices step the globe down to stay smooth",
+			"options": {
+				"orientation": "horizontal",
+				"displayMode": "basic",
+				"showUnfilled": true,
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				}
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"unit": "short"
+				},
+				"overrides": []
 			}
 		}
 	],

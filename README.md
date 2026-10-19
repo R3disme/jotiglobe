@@ -26,8 +26,9 @@ JOTA-JOTI site and is not affiliated with WOSM.
 ## Privacy
 
 - No cookies, no tracking and nothing loaded from other websites.
-- The site may keep anonymous usage statistics (which pages are opened and how fast they load), without IP addresses
-  or browser details, deleted after 30 days. They're used to make the site faster and see which parts are used most.
+- The site counts visits anonymously: only that someone visited and how smoothly the globe ran on their device. Which
+  pages you open is only shared if you switch it on in the privacy notice. No IP addresses or browser details, and
+  everything is deleted after 30 days.
 - Your location, if you share it, never leaves your browser.
 
 ## Using JotiGlobe in your own project
