@@ -451,7 +451,7 @@
 		view.k += (target.k - view.k) * ease;
 		flagAlpha += ((_selected ? (_focused ? 0.45 : 0.9) : 0) - flagAlpha) * (1 - Math.exp(-dt * 4));
 		// nothing moved or changed: keep the last frame
-		const key = `${view.λ.toFixed(2)} ${view.φ.toFixed(2)} ${view.k.toFixed(3)} ${w}x${h} ${hoverCc} ${_selected} ${flagAlpha.toFixed(2)} ${_dots.length} ${!!atlasImg} ${high.length} ${low.length} ${quality}`;
+		const key = `${spinning || dragging} ${view.λ.toFixed(2)} ${view.φ.toFixed(2)} ${view.k.toFixed(3)} ${w}x${h} ${hoverCc} ${_selected} ${flagAlpha.toFixed(2)} ${_dots.length} ${!!atlasImg} ${high.length} ${low.length} ${quality}`;
 		if (key === lastKey && !_focused && !_me) return false;
 		lastKey = key;
 
