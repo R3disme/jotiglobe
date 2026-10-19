@@ -21,6 +21,8 @@
 	import ArrowLeft from '@lucide/svelte/icons/arrow-left';
 	import Search from '@lucide/svelte/icons/search';
 	import Loader from '@lucide/svelte/icons/loader-circle';
+	import Maximize from '@lucide/svelte/icons/maximize-2';
+	import X from '@lucide/svelte/icons/x';
 
 	type Row = { key: string; label: string; value: number; cc?: string; href?: string; sub?: string };
 	type YearData = { year: number; snapshot: string; groups: Group[]; profiles: Map<number, Profile> };
@@ -137,7 +139,6 @@
 	const inCountry = (d: YearData | null, cc: string) => (d ? summarise(d.groups.filter((g) => g.cc === cc), d.profiles) : null);
 	const s = $derived(country && all ? (all.byCc.has(country) ? inCountry(cur, country) : null) : all);
 	const p = $derived(country && allPrev ? inCountry(prev, country) : allPrev);
-	const countryRank = $derived(country && all ? [...all.byCc].sort((a, b) => b[1][m] - a[1][m]).findIndex(([cc]) => cc === country) + 1 : 0);
 
 	function share(n: number, total: number) {
 		if (!total) return '';
@@ -176,7 +177,6 @@
 			? [...s.byPlace.values()]
 					.map((x) => ({ key: `${x.cc}|${x.city}`, label: x.city, cc: country ? undefined : x.cc, value: x[m], sub: country ? undefined : countryName(x.cc) }))
 					.sort(byValue)
-					.slice(0, country ? 12 : 15)
 			: []
 	);
 	const orgRows = $derived<Row[]>(
@@ -184,9 +184,24 @@
 			? [...s.byOrg.values()]
 					.map((x) => ({ key: `${x.cc}|${x.org}`, label: x.org, cc: country ? undefined : x.cc, value: x[m] }))
 					.sort(byValue)
-					.slice(0, 12)
 			: []
 	);
+	const largestRows = $derived<Row[]>(s ? s.largest.map(({ g, n }) => ({ key: String(g.id), label: g.name, value: n, cc: country ? undefined : g.cc, href: groupPath(g) })) : []);
+
+	/** competition ranking: equal values share a rank (1, 2, 2, 4) */
+	function ranked(rows: Row[]) {
+		const out: { r: Row; rank: number }[] = [];
+		rows.forEach((r, i) => out.push({ r, rank: i && rows[i - 1].value === r.value ? out[i - 1].rank : i + 1 }));
+		return out;
+	}
+	let expanded = $state<{ title: string; note: string; rows: Row[]; total: number } | null>(null);
+	let expandQuery = $state('');
+	const expandedRows = $derived(expanded ? ranked(expanded.rows).filter(({ r }) => (r.label + ' ' + (r.sub ?? '')).toLowerCase().includes(expandQuery.trim().toLowerCase())) : []);
+	const open = (title: string, note: string, rows: Row[], total: number) => ((expandQuery = ''), (expanded = { title, note, rows, total }));
+	$effect(() => {
+		document.body.style.overflow = expanded ? 'hidden' : '';
+	});
+
 	const maxSize = $derived(Math.max(1, ...(s?.sizes ?? [])));
 
 	let countryQuery = $state('');
@@ -211,7 +226,11 @@
 	});
 	const filteredCountries = $derived(countryRows.filter((c) => c.name.toLowerCase().includes(countryQuery.trim().toLowerCase())));
 	const visibleCountries = $derived(showAll || countryQuery ? filteredCountries : filteredCountries.slice(0, 20));
-	const maxCountry = $derived(Math.max(1, ...countryRows.map((c) => c[m])));
+	const rankOf = $derived.by(() => {
+		const v = all ? [...all.byCc].map(([cc, x]) => [cc, x[m]] as const) : [];
+		return new Map(v.map(([cc, n]) => [cc, v.filter(([, o]) => o > n).length + 1]));
+	});
+	const countryRank = $derived(country ? (rankOf.get(country) ?? 0) : 0);
 	const mapValues = $derived(new Map(all ? [...all.byCc].map(([cc, v]) => [cc, v[m]]) : []));
 
 	let groupQuery = $state('');
@@ -250,27 +269,47 @@
 	</section>
 {/snippet}
 
-{#snippet bars(rows: Row[], title: string, note = '')}
-	{@const max = Math.max(1, ...rows.map((r) => r.value))}
-	{#snippet body()}
+{#snippet rowItem(r: Row, rank: number, max: number)}
+	<li class="text-sm" title="{r.label}: {fmt(r.value)}{r.sub ? ` (${r.sub})` : ''}">
+		<div class="flex items-baseline gap-2">
+			<span class="text-sand/40 w-6 shrink-0 text-right text-xs tabular-nums">{rank}</span>
+			{#if r.cc}<span class="fi fi-{r.cc.toLowerCase()} shrink-0 rounded-[2px]" aria-hidden="true"></span>{/if}
+			{#if r.href}
+				<a href={r.href} onclick={() => (expanded = null)} class="min-w-0 flex-1 truncate hover:underline">{r.label}{#if r.sub}<span class="text-sand/45"> · {r.sub}</span>{/if}</a>
+			{:else}
+				<span class="min-w-0 flex-1 truncate">{r.label}{#if r.sub}<span class="text-sand/45"> · {r.sub}</span>{/if}</span>
+			{/if}
+			<span class="font-medium tabular-nums">{fmt(r.value)}</span>
+		</div>
+		<div class="mt-1 ml-8 h-1.5 rounded-full bg-white/[0.06]">
+			<div class="bg-moss h-full rounded-full" style:width="{(r.value / max) * 100}%"></div>
+		</div>
+	</li>
+{/snippet}
+
+{#snippet bars(rows: Row[], title: string, note = '', total = 0, limit = 12)}
+	{@const max = total || Math.max(1, ...rows.map((r) => r.value))}
+	<section class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+		<div class="flex items-start gap-2">
+			<button type="button" onclick={() => open(title, note, rows, total)} class="min-w-0 flex-1 text-left">
+				<h2 class="text-lg font-semibold hover:underline">{title}</h2>
+				{#if note}<p class="text-sand/55 mt-1 text-xs">{note}</p>{/if}
+			</button>
+			<button type="button" onclick={() => open(title, note, rows, total)} class="text-sand/50 hover:text-sand -mt-1 -mr-2 grid size-8 place-items-center rounded-md hover:bg-white/10" aria-label="Show {title} full screen" title="Full screen">
+				<Maximize class="size-4" />
+			</button>
+		</div>
 		<ul class="mt-4 space-y-2.5">
-			{#each rows as r (r.key)}
-				<li class="text-sm" title="{r.label}: {fmt(r.value)}{r.sub ? ` (${r.sub})` : ''}">
-					<div class="flex items-baseline gap-2">
-						{#if r.cc}<span class="fi fi-{r.cc.toLowerCase()} shrink-0 rounded-[2px]" aria-hidden="true"></span>{/if}
-						<span class="min-w-0 flex-1 truncate">{r.label}{#if r.sub}<span class="text-sand/45"> · {r.sub}</span>{/if}</span>
-						<span class="font-medium tabular-nums">{fmt(r.value)}</span>
-					</div>
-					<div class="mt-1 h-1.5 rounded-full bg-white/[0.06]">
-						<div class="bg-moss h-full rounded-full" style:width="{(r.value / max) * 100}%"></div>
-					</div>
-				</li>
+			{#each ranked(rows).slice(0, limit) as { r, rank } (r.key)}
+				{@render rowItem(r, rank, max)}
 			{:else}
 				<li class="text-sand/45 text-sm">Nothing to show.</li>
 			{/each}
 		</ul>
-	{/snippet}
-	{@render card(title, note, body)}
+		{#if rows.length > limit}
+			<button type="button" onclick={() => open(title, note, rows, total)} class="text-sand/70 hover:text-sand mt-3 text-sm underline underline-offset-4">Show all {fmt(rows.length)}</button>
+		{/if}
+	</section>
 {/snippet}
 
 {#snippet columns(cols: { key: string; label: string; value: number; title: string }[], height = 'h-40')}
@@ -380,8 +419,8 @@
 
 			{#if !country}
 				<div class="grid items-start gap-6 md:grid-cols-2">
-					{@render bars(wosmRows, `${m === 'groups' ? 'Groups' : 'Participants'} by WOSM region`, 'From the region digit of each group’s JID.')}
-					{@render bars(continentRows, `${m === 'groups' ? 'Groups' : 'Participants'} by continent`)}
+					{@render bars(wosmRows, `${m === 'groups' ? 'Groups' : 'Participants'} by WOSM region`, 'From the region digit of each group’s JID.', wosmRows.reduce((a, r) => a + r.value, 0))}
+					{@render bars(continentRows, `${m === 'groups' ? 'Groups' : 'Participants'} by continent`, '', total)}
 				</div>
 
 				<section class="rounded-xl border border-white/10 bg-white/[0.03] p-5">
@@ -401,6 +440,7 @@
 											<button type="button" onclick={() => (sortBy = key)} class={cn('hover:text-sand', sortBy === key && 'text-sand')}>{label}{sortBy === key && key !== 'name' ? ' ↓' : ''}</button>
 										</th>
 									{/snippet}
+									<th class="text-sand/40 w-8 py-2 pr-2 text-right font-normal">#</th>
 									{@render th('name', 'Country', 'text-left')}
 									{@render th('groups', 'Groups')}
 									{#if hasP}{@render th('participants', 'Participants')}{@render th('avg', 'Per group', 'hidden text-right sm:table-cell')}{/if}
@@ -411,6 +451,7 @@
 							<tbody>
 								{#each visibleCountries as r (r.cc)}
 									<tr class="cursor-pointer border-b border-white/5 hover:bg-white/[0.04]" onclick={() => pickCountry(r.cc)}>
+										<td class="text-sand/40 py-1.5 pr-2 text-right text-xs tabular-nums">{rankOf.get(r.cc) ?? ''}</td>
 										<td class="py-1.5 pr-2">
 											<a href="/stats?country={r.cc}" onclick={(e) => (e.preventDefault(), pickCountry(r.cc))} class="flex items-center gap-2 hover:underline">
 												<span class="fi fi-{r.cc.toLowerCase()} shrink-0 rounded-[2px]" aria-hidden="true"></span>
@@ -424,7 +465,7 @@
 										{/if}
 										<td class="hidden py-1.5 md:table-cell">
 											<div class="flex items-center gap-2" title="{share(r[m], total)} of all {unit}">
-												<div class="h-1.5 flex-1 rounded-full bg-white/[0.06]"><div class="bg-moss h-full rounded-full" style:width="{(r[m] / maxCountry) * 100}%"></div></div>
+												<div class="h-1.5 flex-1 rounded-full bg-white/[0.06]"><div class="bg-moss h-full rounded-full" style:width="{(r[m] / total) * 100}%"></div></div>
 												<span class="text-sand/45 w-12 text-right text-xs tabular-nums">{share(r[m], total)}</span>
 											</div>
 										</td>
@@ -433,7 +474,7 @@
 										{/if}
 									</tr>
 								{:else}
-									<tr><td colspan="6" class="text-sand/50 py-6 text-center">No countries match your search.</td></tr>
+									<tr><td colspan="7" class="text-sand/50 py-6 text-center">No countries match your search.</td></tr>
 								{/each}
 							</tbody>
 						</table>
@@ -453,19 +494,7 @@
 						<p class="text-sand/45 mt-2 text-center text-[11px]">participants per group</p>
 					{/snippet}
 					{@render card('Group sizes', 'Number of groups by how many participants they signed up.', sizesBody)}
-					{#snippet largestBody()}
-						<ol class="mt-4 space-y-1.5 text-sm">
-							{#each s.largest.slice(0, 10) as { g, n }, i (g.id)}
-								<li class="flex items-center gap-2">
-									<span class="text-sand/40 w-5 text-right text-xs tabular-nums">{i + 1}</span>
-									{#if !country}<span class="fi fi-{g.cc.toLowerCase()} shrink-0 rounded-[2px]" aria-hidden="true"></span>{/if}
-									<a href={groupPath(g)} class="min-w-0 flex-1 truncate hover:underline">{g.name}</a>
-									<span class="font-medium tabular-nums">{fmt(n)}</span>
-								</li>
-							{/each}
-						</ol>
-					{/snippet}
-					{@render card('Largest groups', '', largestBody)}
+					{@render bars(largestRows, 'Largest groups', `By participants signed up in ${year}.`)}
 				</div>
 			{/if}
 
@@ -511,3 +540,35 @@
 		{/if}
 	</main>
 </div>
+
+<svelte:window onkeydown={(e) => e.key === 'Escape' && (expanded = null)} />
+{#if expanded}
+	{@const max = expanded.total || Math.max(1, ...expanded.rows.map((r) => r.value))}
+	<div class="bg-forest-950/98 fixed inset-0 z-50 flex flex-col backdrop-blur" role="dialog" aria-modal="true" aria-label={expanded.title}>
+		<div class="border-b border-white/10">
+			<div class="mx-auto flex max-w-3xl flex-wrap items-center gap-3 px-4 py-3 sm:px-6">
+				<div class="min-w-0 flex-1">
+					<h2 class="truncate text-xl font-semibold">{expanded.title}</h2>
+					<p class="text-sand/55 text-xs">{fmt(expanded.rows.length)} in total{expanded.note ? ` · ${expanded.note}` : ''}</p>
+				</div>
+				<label class="relative block w-full sm:w-56">
+					<Search class="text-sand/40 pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+					<!-- svelte-ignore a11y_autofocus -->
+					<input bind:value={expandQuery} autofocus placeholder="Search" class="placeholder:text-sand/40 focus:border-moss w-full rounded-md border border-white/10 bg-white/5 py-1.5 pr-3 pl-9 text-sm outline-none" />
+				</label>
+				<button type="button" onclick={() => (expanded = null)} class="text-sand/70 hover:text-sand grid size-9 place-items-center rounded-md hover:bg-white/10" aria-label="Close" title="Close (Esc)">
+					<X class="size-5" />
+				</button>
+			</div>
+		</div>
+		<div class="min-h-0 flex-1 overflow-y-auto">
+			<ul class="mx-auto max-w-3xl space-y-2.5 px-4 py-5 sm:px-6">
+				{#each expandedRows as { r, rank } (r.key)}
+					{@render rowItem(r, rank, max)}
+				{:else}
+					<li class="text-sand/50 py-6 text-center text-sm">Nothing matches your search.</li>
+				{/each}
+			</ul>
+		</div>
+	</div>
+{/if}
