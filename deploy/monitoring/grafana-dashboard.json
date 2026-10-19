@@ -458,7 +458,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | label_format section=`{{ if eq .page \"/\" }}Globe{{ else if eq .page \"/stats\" }}Statistics{{ else if hasPrefix \"/groups/\" .page }}Group pages{{ else if hasPrefix \"/countries/\" .page }}Country pages{{ else }}Other{{ end }}` [$__range])))",
+					"expr": "sort_desc(topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | label_format section=`{{ if eq .page \"/\" }}Globe{{ else if eq .page \"/stats\" }}Statistics{{ else if hasPrefix \"/groups/\" .page }}Group pages{{ else if hasPrefix \"/countries/\" .page }}Country pages{{ else }}Other{{ end }}` [$__range]))))",
 					"legendFormat": "{{section}}",
 					"queryType": "instant"
 				}
@@ -472,39 +472,16 @@
 					"calcs": [
 						"lastNotNull"
 					],
-					"values": true,
-					"fields": "/^Last/"
+					"values": false
 				}
 			},
-			"transformations": [
-				{
-					"id": "reduce",
-					"options": {
-						"reducers": [
-							"lastNotNull"
-						]
-					}
-				},
-				{
-					"id": "sortBy",
-					"options": {
-						"sort": [
-							{
-								"field": "Last *",
-								"desc": true
-							}
-						]
-					}
-				}
-			],
 			"fieldConfig": {
 				"defaults": {
 					"color": {
 						"mode": "fixed",
 						"fixedColor": "#7fb48d"
 					},
-					"unit": "short",
-					"displayName": "${__data.fields.Field}"
+					"unit": "short"
 				},
 				"overrides": []
 			}
@@ -530,7 +507,7 @@
 						"type": "loki",
 						"uid": "jotiglobe-loki"
 					},
-					"expr": "topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | page=~\"/(groups|countries)/.+\" | label_format page=`{{ if hasPrefix \"/groups/\" .page }}{{ regexReplaceAll \"-\" (regexReplaceAll \"^/groups/(.*?)-?[0-9]+$\" .page \"${1}\") \" \" }}{{ else }}{{ regexReplaceAll \"^/countries/\" .page \"Country \" }}{{ end }}` [$__range])))",
+					"expr": "sort_desc(topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json path, page, entry, status, duration, method | path=\"/hit\" | label_format page=`{{ urldecode .page }}` | page=~\"/(groups|countries)/.+\" | label_format page=`{{ if hasPrefix \"/groups/\" .page }}{{ regexReplaceAll \"-\" (regexReplaceAll \"^/groups/(.*?)-?[0-9]+$\" .page \"${1}\") \" \" }}{{ else }}{{ regexReplaceAll \"^/countries/\" .page \"Country \" }}{{ end }}` [$__range]))))",
 					"legendFormat": "{{page}}",
 					"queryType": "instant"
 				}
@@ -543,39 +520,16 @@
 					"calcs": [
 						"lastNotNull"
 					],
-					"values": true,
-					"fields": "/^Last/"
+					"values": false
 				}
 			},
-			"transformations": [
-				{
-					"id": "reduce",
-					"options": {
-						"reducers": [
-							"lastNotNull"
-						]
-					}
-				},
-				{
-					"id": "sortBy",
-					"options": {
-						"sort": [
-							{
-								"field": "Last *",
-								"desc": true
-							}
-						]
-					}
-				}
-			],
 			"fieldConfig": {
 				"defaults": {
 					"color": {
 						"mode": "fixed",
 						"fixedColor": "#7fb48d"
 					},
-					"unit": "short",
-					"displayName": "${__data.fields.Field}"
+					"unit": "short"
 				},
 				"overrides": []
 			}

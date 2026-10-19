@@ -183,34 +183,81 @@
 	function placeFlag(cc: string, f: CountryFeature): Place | null {
 		const g = geoBox(f);
 		if (geoDistance(g.c, [-view.λ, -view.φ]) > Math.PI / 2 + 0.25) return null;
-		const sc = Math.max(g.w / 4, g.h / 3);
-		if (sc * projection.scale() < 1) return null;
+		// a little larger than the country, so no edge is left bare
+		const sc = Math.max(g.w / 4, g.h / 3) * 1.08;
+		const px = 4 * sc * projection.scale();
+		if (px < 4) return null;
 		const [fx, fy] = flagFit[cc] ?? [0.5, 0.5];
 		const dLon = (4 * sc) / rad / Math.max(0.2, Math.cos(g.c[1] * rad)),
 			dLat = (3 * sc) / rad;
-		// big flags are drawn in pieces so they follow the curve of the globe
-		const n = 4 * sc > 0.6 ? 3 : 4 * sc > 0.25 ? 2 : 1;
+		// finer mesh the bigger the flag is on screen, so it follows the curve of the globe
+		const n = px < 90 ? 1 : px < 220 ? 2 : px < 480 ? 4 : px < 1000 ? 6 : 8;
 		return { lon0: g.c[0] - fx * dLon, lat0: g.c[1] + fy * dLat, dLon, dLat, n };
 	}
+	// maps three image points onto three screen points
+	function affine(ctx: CanvasRenderingContext2D, s: number[], d: number[]) {
+		const [x0, y0, x1, y1, x2, y2] = s,
+			[X0, Y0, X1, Y1, X2, Y2] = d;
+		const den = (x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0);
+		const a = ((X1 - X0) * (y2 - y0) - (X2 - X0) * (y1 - y0)) / den,
+			c = ((X2 - X0) * (x1 - x0) - (X1 - X0) * (x2 - x0)) / den,
+			b = ((Y1 - Y0) * (y2 - y0) - (Y2 - Y0) * (y1 - y0)) / den,
+			dd = ((Y2 - Y0) * (x1 - x0) - (Y1 - Y0) * (x2 - x0)) / den;
+		ctx.transform(a, b, c, dd, X0 - a * x0 - c * y0, Y0 - b * x0 - dd * y0);
+	}
+	// the flag as a mesh of triangles on the globe; neighbours share their corners, so shapes bend without breaks
 	function drawOnSurface(ctx: CanvasRenderingContext2D, img: CanvasImageSource, sx: number, sy: number, sw: number, sh: number, pl: Place) {
-		const at = (u: number, v: number) => projection([pl.lon0 + u * pl.dLon, Math.max(-89.9, Math.min(89.9, pl.lat0 - v * pl.dLat))]);
-		const e = pl.n > 1 ? 0.04 : 0; // pieces overlap a little so no seams show
-		for (let i = 0; i < pl.n; i++)
-			for (let j = 0; j < pl.n; j++) {
-				const u0 = Math.max(0, i / pl.n - e),
-					u1 = Math.min(1, (i + 1) / pl.n + e),
-					v0 = Math.max(0, j / pl.n - e),
-					v1 = Math.min(1, (j + 1) / pl.n + e);
-				const a = at(u0, v0),
-					b = at(u1, v0),
-					c = at(u0, v1);
-				if (!a || !b || !c) continue;
-				const cw = (u1 - u0) * sw,
-					ch = (v1 - v0) * sh;
-				ctx.save();
-				ctx.transform((b[0] - a[0]) / cw, (b[1] - a[1]) / cw, (c[0] - a[0]) / ch, (c[1] - a[1]) / ch, a[0], a[1]);
-				ctx.drawImage(img, sx + u0 * sw, sy + v0 * sh, cw, ch, 0, 0, cw, ch);
-				ctx.restore();
+		const n = pl.n;
+		const centre: [number, number] = [-view.λ, -view.φ];
+		const pts: ([number, number] | null)[] = [];
+		for (let j = 0; j <= n; j++)
+			for (let i = 0; i <= n; i++) {
+				const ll: [number, number] = [pl.lon0 + (i / n) * pl.dLon, Math.max(-89.9, Math.min(89.9, pl.lat0 - (j / n) * pl.dLat))];
+				pts.push(n === 1 || geoDistance(ll, centre) < Math.PI / 2 ? (projection(ll) as [number, number]) : null);
+			}
+		const P = (i: number, j: number) => pts[j * (n + 1) + i];
+		const I = (i: number, j: number) => [sx + (i / n) * sw, sy + (j / n) * sh];
+		if (n === 1) {
+			const [a, b, c] = [P(0, 0), P(1, 0), P(0, 1)];
+			if (!a || !b || !c) return;
+			ctx.save();
+			affine(ctx, [...I(0, 0), ...I(1, 0), ...I(0, 1)], [...a, ...b, ...c]);
+			ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
+			ctx.restore();
+			return;
+		}
+		const tri = (t: [number, number][]) => {
+			// grow the triangle by half a pixel so neighbours overlap instead of leaving hairline gaps
+			const cx = (t[0][0] + t[1][0] + t[2][0]) / 3,
+				cy = (t[0][1] + t[1][1] + t[2][1]) / 3;
+			ctx.beginPath();
+			for (const [x, y] of t) {
+				const l = Math.hypot(x - cx, y - cy) || 1;
+				ctx.lineTo(x + ((x - cx) / l) * 0.6, y + ((y - cy) / l) * 0.6);
+			}
+			ctx.closePath();
+			ctx.clip();
+		};
+		for (let j = 0; j < n; j++)
+			for (let i = 0; i < n; i++) {
+				const a = P(i, j),
+					b = P(i + 1, j),
+					c = P(i, j + 1),
+					d = P(i + 1, j + 1);
+				if (a && b && c) {
+					ctx.save();
+					tri([a, b, c]);
+					affine(ctx, [...I(i, j), ...I(i + 1, j), ...I(i, j + 1)], [...a, ...b, ...c]);
+					ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
+					ctx.restore();
+				}
+				if (b && c && d) {
+					ctx.save();
+					tri([d, c, b]);
+					affine(ctx, [...I(i + 1, j + 1), ...I(i, j + 1), ...I(i + 1, j)], [...d, ...c, ...b]);
+					ctx.drawImage(img, sx, sy, sw, sh, sx, sy, sw, sh);
+					ctx.restore();
+				}
 			}
 	}
 	/** outlying areas whose middle the main flag doesn't reach (Alaska, Hawaii, Svalbard…) */
