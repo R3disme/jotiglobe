@@ -1,7 +1,7 @@
 # JotiGlobe
 
 A globe of the scout groups signed up for JOTA-JOTI, made by 1st Sandnes Scout Group. It runs in the browser
-and stores nothing about visitors.
+and keeps only anonymous usage statistics (pages opened, no IP addresses or browser details, deleted after 30 days).
 
 Website: https://jotiglobe.narluga-tuna.ts.net
 
@@ -13,7 +13,7 @@ pnpm dev
 ```
 
 Pages: `/` the globe with a year picker (`/?year=2026`, `/?country=NO` opens a country), `/stats` statistics with a year picker (`/stats?year=2026`),
-`/groups/<name>-<id>` one group with its JID and a link to its profile on jotajoti.info.
+`/stats?country=NO` one country, `/groups/<name>-<id>` one group across the years (participants, JID, organisation).
 
 ## A new year
 
@@ -22,12 +22,22 @@ the newest year unless another is picked; `/stats` and the group pages use them 
 
 ```sh
 pnpm data:groups                    # directory → public/data/<this year>/groups.json, adds the year to years.json
-pnpm data:jids                      # group JIDs → public/data/<this year>/jids.json (slow: one page per group)
-python3 scripts/export-contacts.py /path/to/joti-kontakter.db 2026   # optional: contact totals per country
+pnpm data:profiles                  # JID, participants, organisation → profiles.json, then keys.json (slow: one page per group)
 ```
 
-Check the weekend dates the script guessed in `years.json`. `contacts.json` is optional; without it `/stats` leaves
-out the contacts part. It only holds totals per country (no group ids, patrols or notes).
+Check the weekend dates the script guessed in `years.json`. Groups sign up again every year with a new directory id
+(and often a new JID), so `scripts/link-years.mjs` matches them to earlier years by JID, or by name in the same country,
+and `keys.json` keeps their first id: the group page URL then stays the same.
+
+## Usage statistics (optional)
+
+Without `GRAFANA_URL` the site collects nothing and the privacy notice says nothing about it. With it (in `.env` when
+building), each page view sends an anonymous `/hit` that nginx logs without IP, user agent or referrer.
+
+```sh
+bash deploy/monitoring/setup.sh   # on the server: Prometheus, Loki, Alloy, exporters (30 days)
+GRAFANA_URL=… GRAFANA_TOKEN=… JG_IP=… OWNER=… deploy/monitoring/grafana.sh   # data sources, private folder, dashboard
+```
 
 Changes go through pull requests. Group list from the public directory on jotajoti.info; map data Natural Earth,
 places GeoNames (CC BY 4.0), flags flag-icons (MIT). Code under the MIT licence.

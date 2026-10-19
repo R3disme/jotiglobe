@@ -1,7 +1,6 @@
 import fs from 'fs';
 import { execSync } from 'child_process';
-// Geocodes scripts/.cache/groups-raw.json with GeoNames (CC-BY 4.0) → public/data/<year>/groups.json, and lists the year
-// in public/data/years.json. Usage: node scripts/geocode-groups.mjs [year]   (default: this year)
+// Usage: node scripts/geocode-groups.mjs [year]
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const { geoContains, geoBounds, geoCentroid, geoArea } = require('d3-geo');
@@ -97,7 +96,6 @@ console.log('groups', raw.length, 'placed', out.length, 'city-matched', hit, 'ap
 const year = +(process.argv[2] ?? new Date().getUTCFullYear());
 fs.mkdirSync(`public/data/${year}`, { recursive: true });
 fs.writeFileSync(`public/data/${year}/groups.json`, JSON.stringify({ snapshot: new Date().toISOString().slice(0, 10), fields: ['id', 'name', 'city', 'cc', 'lat', 'lon', 'approx'], groups: out }));
-// a new year starts out with the third weekend of October; fix the dates in years.json if JOTA-JOTI moves
 const yf = 'public/data/years.json';
 const years = fs.existsSync(yf) ? JSON.parse(fs.readFileSync(yf, 'utf8')).years : [];
 if (!years.some(y => y.year === year)) {
