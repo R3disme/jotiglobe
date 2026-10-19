@@ -13,6 +13,8 @@
 	import RotateCcw from '@lucide/svelte/icons/rotate-ccw';
 	import { cn } from './utils';
 	import { countryName } from './data';
+	import { globePerf } from './privacy.svelte.ts';
+	import { countPerf } from './router.svelte.ts';
 	import atlasUrl from '../assets/flags.webp';
 	import atlas from './flag-atlas.json';
 
@@ -824,6 +826,7 @@
 	let atmKey = '';
 
 	onMount(() => {
+		const perfTimer = setTimeout(countPerf, 15000);
 		reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		makeGlow();
 		const ctx = canvas.getContext('2d')!;
@@ -874,7 +877,10 @@
 			if (!draw(ctx, Math.min(dt, 0.05))) return;
 			cost = cost * 0.95 + (performance.now() - t0) * 0.05;
 			interval = interval * 0.95 + dt * 1000 * 0.05;
-			canvas.dataset.cost = cost.toFixed(1);
+			globePerf.frames++;
+			globePerf.cost = cost;
+			globePerf.fps = 1000 / interval;
+			globePerf.quality = quality;
 			// only steps down, and not while the first frames build their caches, so it never flips back and forth
 			if (now - started < 6000 || now < warmUntil) return;
 			if ((cost > 20 || interval > (quality >= 2 ? 80 : 50)) && quality < 2 && now - changed > 4000) {
@@ -891,6 +897,7 @@
 
 		return () => {
 			alive = false;
+			clearTimeout(perfTimer);
 			cancelAnimationFrame(raf);
 			ro.disconnect();
 			io.disconnect();

@@ -30,8 +30,14 @@ deploy/deploy.sh root@<server>   # pnpm build, then copy build/ to /srv/jotiglob
 
 ## Usage statistics (optional)
 
-Set `GRAFANA_URL` in `.env` before building. Each page view then sends an anonymous `/hit` that nginx logs, and the
-privacy notice mentions it. On the server:
+Set `GRAFANA_URL` in `.env` before building. The privacy notice then mentions the statistics and gets a switch:
+
+- by default each visit sends one `/hit?e=1` (someone visited) and, after 15 seconds on a globe, one
+  `/hit?perf=1&q=…&ms=…&fps=…` (quality level, frame time and frame rate). No pages;
+- visitors who switch it on also send `/hit?p=<page>` for each page, and `e=1` only on their first visit of the day
+  (the date is kept in their browser and never sent).
+
+nginx logs these without IP, user agent or referrer. On the server:
 
 ```sh
 bash deploy/monitoring/setup.sh   # Prometheus, Loki, Alloy and exporters, kept for 30 days
