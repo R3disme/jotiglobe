@@ -56,7 +56,8 @@ export default defineConfig(({ mode }) => {
 			})
 		],
 		define: { __USAGE_STATS__: JSON.stringify(!!grafana) },
-		server: { port: 5180 },
+		// build/ alone is ~43,000 files; watching it made the dev server grow by gigabytes
+		server: { port: 5180, watch: { ignored: ['**/build/**', '**/scripts/.cache/**', '**/static/_errors/**'] } },
 		preview: {
 			port: 5180,
 			headers: {

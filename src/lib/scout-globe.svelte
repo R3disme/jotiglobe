@@ -327,7 +327,7 @@
 			[w, s], [w, n], [east, s], [east, n], [(w + east) / 2, s], [(w + east) / 2, n], [w, (s + n) / 2], [east, (s + n) / 2]
 		];
 		const a = Math.max(...pts.map((p) => geoDistance(c, p)));
-		return Math.min(28, Math.max(1.15, 0.78 / Math.sin(Math.min(a, 1.3))));
+		return Math.min(28, Math.max(1.3, 0.9 / Math.sin(Math.min(a, 1.3))));
 	}
 
 	function shortest(from: number, to: number) {
@@ -421,6 +421,8 @@
 		const p = local(e);
 		if (!pointers.has(e.pointerId)) {
 			updateHover(p);
+			// looking around counts as using the globe, so a selected country doesn't time out under the pointer
+			if (selected || focused) poke();
 			return;
 		}
 		const prev = pointers.get(e.pointerId)!;
@@ -490,13 +492,16 @@
 	}
 
 	/** Nearest visible group dot under the pointer (only when zoomed in enough to tell dots apart) */
+	/** Nearest visible group dot under the pointer: the selected country's pins at any zoom, others once zoomed in */
 	function dotAt(p: { x: number; y: number }) {
-		if (view.k <= 2.2) return null;
+		const anyDot = view.k > 2.2;
+		if (!anyDot && !selected) return null;
 		let best: (typeof dots)[number] | null = null;
 		let bestD = 10;
 		for (const d of dots) {
-			if (!d.vis) continue;
-			const dist = Math.hypot(d.px - p.x, d.py - p.y);
+			if (!d.vis || (!anyDot && d.g.cc !== selected)) continue;
+			// the selected country's pins win over glow dots of neighbours at the same spot
+			const dist = Math.hypot(d.px - p.x, d.py - p.y) - (selected && d.g.cc === selected ? 3 : 0);
 			if (dist < bestD) {
 				bestD = dist;
 				best = d;
