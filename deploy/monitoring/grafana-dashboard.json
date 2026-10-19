@@ -54,7 +54,7 @@
 					"queryType": "instant"
 				}
 			],
-			"description": "Visits started in the last 5 minutes (a visit = the first page someone opens). Anonymous: no ids or IP addresses.",
+			"description": "Visits started in the last 5 minutes, opted in or not. Anonymous: no ids or IP addresses.",
 			"options": {
 				"reduceOptions": {
 					"calcs": [
@@ -80,11 +80,11 @@
 		{
 			"id": 3,
 			"type": "stat",
-			"title": "Visits",
+			"title": "All visits",
 			"gridPos": {
 				"x": 4,
 				"y": 1,
-				"w": 4,
+				"w": 3,
 				"h": 4
 			},
 			"datasource": {
@@ -103,7 +103,7 @@
 					"queryType": "instant"
 				}
 			],
-			"description": "Visits in the selected time range",
+			"description": "Every visit in the selected time range, opted in or not. Someone who comes back is counted again.",
 			"options": {
 				"reduceOptions": {
 					"calcs": [
@@ -129,9 +129,58 @@
 		{
 			"id": 4,
 			"type": "stat",
+			"title": "Opted-in visits",
+			"gridPos": {
+				"x": 7,
+				"y": 1,
+				"w": 3,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" | page!=\"\" [$__range]))",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Visits from people who share their pages. Each of them is counted once a day, so these aren't duplicated.",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 5,
+			"type": "stat",
 			"title": "Page views",
 			"gridPos": {
-				"x": 8,
+				"x": 10,
 				"y": 1,
 				"w": 4,
 				"h": 4
@@ -176,11 +225,11 @@
 			}
 		},
 		{
-			"id": 5,
+			"id": 6,
 			"type": "stat",
 			"title": "Requests / s",
 			"gridPos": {
-				"x": 12,
+				"x": 14,
 				"y": 1,
 				"w": 4,
 				"h": 4
@@ -227,13 +276,13 @@
 			}
 		},
 		{
-			"id": 6,
+			"id": 7,
 			"type": "stat",
 			"title": "Errors",
 			"gridPos": {
-				"x": 16,
+				"x": 18,
 				"y": 1,
-				"w": 4,
+				"w": 3,
 				"h": 4
 			},
 			"datasource": {
@@ -277,13 +326,13 @@
 			}
 		},
 		{
-			"id": 7,
+			"id": 8,
 			"type": "stat",
 			"title": "Response time (p95)",
 			"gridPos": {
-				"x": 20,
+				"x": 21,
 				"y": 1,
-				"w": 4,
+				"w": 3,
 				"h": 4
 			},
 			"datasource": {
@@ -327,7 +376,7 @@
 			}
 		},
 		{
-			"id": 8,
+			"id": 9,
 			"type": "timeseries",
 			"title": "Visitors and requests",
 			"gridPos": {
@@ -348,7 +397,17 @@
 						"uid": "jotiglobe-loki"
 					},
 					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" [1m]))",
-					"legendFormat": "Visits / min",
+					"legendFormat": "All visits / min",
+					"queryType": "range"
+				},
+				{
+					"refId": "D",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json path, page, entry, perf, q, ms, fps, status, duration, method | path=\"/hit\" | entry=\"1\" | page!=\"\" [1m]))",
+					"legendFormat": "Opted-in visits / min",
 					"queryType": "range"
 				},
 				{
@@ -373,7 +432,7 @@
 					"range": true
 				}
 			],
-			"description": "Visits and page views (left axis) next to all HTTP requests (right axis), per minute",
+			"description": "All visits, opted-in visits and page views (left axis) next to all HTTP requests (right axis), per minute",
 			"fieldConfig": {
 				"defaults": {
 					"unit": "short",
@@ -425,7 +484,7 @@
 			}
 		},
 		{
-			"id": 9,
+			"id": 10,
 			"type": "row",
 			"title": "What people use",
 			"collapsed": false,
@@ -438,7 +497,7 @@
 			"panels": []
 		},
 		{
-			"id": 10,
+			"id": 11,
 			"type": "bargauge",
 			"title": "Most used parts of the site",
 			"gridPos": {
@@ -487,7 +546,7 @@
 			}
 		},
 		{
-			"id": 11,
+			"id": 12,
 			"type": "bargauge",
 			"title": "Most viewed groups and countries",
 			"gridPos": {
@@ -535,7 +594,7 @@
 			}
 		},
 		{
-			"id": 12,
+			"id": 13,
 			"type": "row",
 			"title": "Traffic",
 			"collapsed": false,
@@ -548,7 +607,7 @@
 			"panels": []
 		},
 		{
-			"id": 13,
+			"id": 14,
 			"type": "timeseries",
 			"title": "Responses by status",
 			"gridPos": {
@@ -593,7 +652,7 @@
 			}
 		},
 		{
-			"id": 14,
+			"id": 15,
 			"type": "timeseries",
 			"title": "Response time",
 			"gridPos": {
@@ -647,7 +706,7 @@
 			}
 		},
 		{
-			"id": 15,
+			"id": 16,
 			"type": "row",
 			"title": "System",
 			"collapsed": false,
@@ -660,7 +719,7 @@
 			"panels": []
 		},
 		{
-			"id": 16,
+			"id": 17,
 			"type": "timeseries",
 			"title": "CPU",
 			"gridPos": {
@@ -702,7 +761,7 @@
 			}
 		},
 		{
-			"id": 17,
+			"id": 18,
 			"type": "timeseries",
 			"title": "Memory",
 			"gridPos": {
@@ -777,7 +836,7 @@
 			}
 		},
 		{
-			"id": 18,
+			"id": 19,
 			"type": "timeseries",
 			"title": "Disk used",
 			"gridPos": {
@@ -819,7 +878,7 @@
 			}
 		},
 		{
-			"id": 19,
+			"id": 20,
 			"type": "timeseries",
 			"title": "Network",
 			"gridPos": {
@@ -870,7 +929,7 @@
 			}
 		},
 		{
-			"id": 20,
+			"id": 21,
 			"type": "timeseries",
 			"title": "nginx connections",
 			"gridPos": {
@@ -921,7 +980,7 @@
 			}
 		},
 		{
-			"id": 21,
+			"id": 22,
 			"type": "timeseries",
 			"title": "Load",
 			"gridPos": {
@@ -972,7 +1031,7 @@
 			}
 		},
 		{
-			"id": 22,
+			"id": 23,
 			"type": "row",
 			"title": "Logs",
 			"collapsed": false,
@@ -985,7 +1044,7 @@
 			"panels": []
 		},
 		{
-			"id": 23,
+			"id": 24,
 			"type": "logs",
 			"title": "Requests (anonymous log)",
 			"gridPos": {
@@ -1018,7 +1077,7 @@
 			}
 		},
 		{
-			"id": 24,
+			"id": 25,
 			"type": "row",
 			"title": "Globe performance",
 			"collapsed": false,
@@ -1031,7 +1090,7 @@
 			"panels": []
 		},
 		{
-			"id": 25,
+			"id": 26,
 			"type": "stat",
 			"title": "Typical frame time",
 			"gridPos": {
@@ -1081,7 +1140,7 @@
 			}
 		},
 		{
-			"id": 26,
+			"id": 27,
 			"type": "stat",
 			"title": "Typical frame rate",
 			"gridPos": {
@@ -1131,7 +1190,7 @@
 			}
 		},
 		{
-			"id": 27,
+			"id": 28,
 			"type": "stat",
 			"title": "Visits that lowered quality",
 			"gridPos": {
@@ -1181,7 +1240,7 @@
 			}
 		},
 		{
-			"id": 28,
+			"id": 29,
 			"type": "stat",
 			"title": "Visits measured",
 			"gridPos": {
@@ -1230,7 +1289,7 @@
 			}
 		},
 		{
-			"id": 29,
+			"id": 30,
 			"type": "timeseries",
 			"title": "Frame time",
 			"gridPos": {
@@ -1284,7 +1343,7 @@
 			}
 		},
 		{
-			"id": 30,
+			"id": 31,
 			"type": "bargauge",
 			"title": "Quality the globe settled on",
 			"gridPos": {
