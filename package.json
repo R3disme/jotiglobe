@@ -4,10 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host",
-    "build": "vite build",
+    "dev": "vite dev --host",
+    "build": "node scripts/build-error-pages.mjs && vite build",
     "preview": "vite preview --host",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "data:groups": "node scripts/scrape-directory.mjs && node scripts/geocode-groups.mjs && node scripts/build-flags.mjs",
     "data:flags": "node scripts/build-flags.mjs",
     "data:profiles": "node scripts/scrape-profiles.mjs && node scripts/link-years.mjs"
@@ -16,10 +16,13 @@
     "@fontsource-variable/figtree": "^5.3.0",
     "@fontsource-variable/roboto-slab": "^5.3.0",
     "@lucide/svelte": "^1.57.0",
+    "@sveltejs/adapter-static": "^4.0.0",
+    "@sveltejs/kit": "^3.1.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",
+    "@types/node": "^26.6.5",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "clsx": "^2.1.1",
@@ -32,5 +35,8 @@
     "topojson-client": "^3.1.0",
     "typescript": "^6.0.3",
     "vite": "^8.3.4"
+  },
+  "imports": {
+    "#lib/*": "./src/lib/*"
   }
 }
