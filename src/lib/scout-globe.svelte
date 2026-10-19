@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	export type Group = { id: number; name: string; city: string; cc: string; lat: number; lon: number; approx?: boolean };
+	export type Group = { id: number; key: number; name: string; city: string; cc: string; lat: number; lon: number; approx?: boolean };
 </script>
 
 <script lang="ts">
@@ -21,6 +21,8 @@
 		selected = $bindable(null),
 		focused = $bindable(null),
 		onopen,
+		onpick,
+		oncountry,
 		idleMs = 10000,
 		controls = true,
 		highlight = null,
@@ -40,6 +42,10 @@
 		focused?: Group | null;
 		/** Called on double-click on a group dot */
 		onopen?: (g: Group) => void;
+		/** Called when a group dot is clicked */
+		onpick?: (g: Group) => void;
+		/** Called when a country with groups is clicked */
+		oncountry?: (cc: string) => void;
 		idleMs?: number;
 		controls?: boolean;
 		class?: string;
@@ -127,10 +133,6 @@
 		return { ...f, geometry: { type: 'MultiPolygon', coordinates: polys.filter((p) => p.a >= max * 0.2).map((p) => p.c) } };
 	}
 
-	/**
-	 * Where the flag goes: the main parts, plus the outlying parts grouped into areas (Alaska, Hawaii, Svalbard, the Canaries…).
-	 * One flag sized to the main parts leaves those as an empty outline, so each area that falls outside it gets a flag of its own.
-	 */
 	const flagAreasCache = new WeakMap<CountryFeature, { main: CountryFeature; rest: CountryFeature[] }>();
 	function flagAreas(f: CountryFeature) {
 		let a = flagAreasCache.get(f);
@@ -139,7 +141,6 @@
 		const rest: CountryFeature[] = [];
 		if (f.geometry.type === 'MultiPolygon' && main.geometry.type === 'MultiPolygon') {
 			const inMain = new Set(main.geometry.coordinates);
-			// islands less than ~3° apart belong to the same area (chains like the Aleutians join up link by link)
 			const clusters: { polys: Position[][][]; cs: [number, number][] }[] = [];
 			for (const poly of f.geometry.coordinates) {
 				if (inMain.has(poly)) continue;
@@ -293,11 +294,13 @@
 			const dot = dotAt(p);
 			if (dot) {
 				focused = dot.g;
+				onpick?.(dot.g);
 			} else {
 				const cc = countryAt(p);
 				if (cc && groupsByCc.has(cc)) {
 					focused = null;
 					selected = cc;
+					oncountry?.(cc);
 				}
 			}
 		}
@@ -465,7 +468,6 @@
 			if (img) {
 				const areas = flagAreas(sel);
 				const bounds = geoPath(projection).bounds;
-				/** Draws the flag covering `b`, clipped to `shape`; returns the flag's rectangle */
 				const drawFlag = (shape: CountryFeature, [[x0, y0], [x1, y1]]: [[number, number], [number, number]]) => {
 					const bw = x1 - x0,
 						bh = y1 - y0;
@@ -480,7 +482,6 @@
 					return r;
 				};
 				ctx.globalAlpha = flagAlpha;
-				// the main flag fills the whole country; outlying areas it doesn't reach get their own
 				const m = drawFlag(sel, bounds(areas.main));
 				for (const area of areas.rest) {
 					const b = bounds(area);

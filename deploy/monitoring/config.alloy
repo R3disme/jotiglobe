@@ -1,0 +1,25 @@
+local.file_match "stats" {
+	path_targets = [{"__path__" = "/var/log/nginx/jotiglobe-stats.log", "job" = "jotiglobe"}]
+}
+
+loki.source.file "stats" {
+	targets    = local.file_match.stats.targets
+	forward_to = [loki.process.stats.receiver]
+}
+
+loki.process "stats" {
+	stage.json {
+		expressions = { time = "time" }
+	}
+	stage.timestamp {
+		source = "time"
+		format = "RFC3339"
+	}
+	forward_to = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+	endpoint {
+		url = "http://@IP@:3100/loki/api/v1/push"
+	}
+}

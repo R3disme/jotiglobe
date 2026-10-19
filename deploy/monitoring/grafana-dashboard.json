@@ -1,0 +1,1027 @@
+{
+	"uid": "jotiglobe-stats",
+	"title": "JotiGlobe",
+	"description": "Anonymous usage statistics and server health for jotiglobe (deploy/monitoring in the repo)",
+	"tags": [
+		"jotiglobe"
+	],
+	"timezone": "browser",
+	"refresh": "1m",
+	"time": {
+		"from": "now-24h",
+		"to": "now"
+	},
+	"schemaVersion": 41,
+	"editable": true,
+	"graphTooltip": 1,
+	"panels": [
+		{
+			"id": 1,
+			"type": "row",
+			"title": "Visitors",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 0,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 2,
+			"type": "stat",
+			"title": "Active visitors",
+			"gridPos": {
+				"x": 0,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [5m]))",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Visits started in the last 5 minutes (a visit = the first page someone opens). Anonymous: no ids or IP addresses.",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 3,
+			"type": "stat",
+			"title": "Visits",
+			"gridPos": {
+				"x": 4,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [$__range]))",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Visits in the selected time range",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 4,
+			"type": "stat",
+			"title": "Page views",
+			"gridPos": {
+				"x": 8,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" [$__range]))",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Pages opened in the selected time range, including moving between pages",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 5,
+			"type": "stat",
+			"title": "Requests / s",
+			"gridPos": {
+				"x": 12,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "sum(rate(nginx_http_requests_total[5m]))",
+					"legendFormat": "",
+					"instant": true,
+					"range": false
+				}
+			],
+			"description": "All HTTP requests nginx handles (pages, data, flags…)",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "reqps",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 2
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 6,
+			"type": "stat",
+			"title": "Errors",
+			"gridPos": {
+				"x": 16,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | status=~\"5..\" [$__range])) / sum(count_over_time({job=\"jotiglobe\"} [$__range])) * 100",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "Share of requests answered with a 5xx server error",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 2
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 7,
+			"type": "stat",
+			"title": "Response time (p95)",
+			"gridPos": {
+				"x": 20,
+				"y": 1,
+				"w": 4,
+				"h": 4
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [$__range])",
+					"legendFormat": "",
+					"queryType": "instant"
+				}
+			],
+			"description": "95 % of requests were answered faster than this",
+			"options": {
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				},
+				"colorMode": "value",
+				"graphMode": "none",
+				"textMode": "value"
+			},
+			"fieldConfig": {
+				"defaults": {
+					"unit": "s",
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"decimals": 3
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 8,
+			"type": "timeseries",
+			"title": "Visitors and requests",
+			"gridPos": {
+				"x": 0,
+				"y": 5,
+				"w": 24,
+				"h": 9
+			},
+			"datasource": {
+				"type": "datasource",
+				"uid": "-- Mixed --"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | entry=\"1\" [1m]))",
+					"legendFormat": "Visits / min",
+					"queryType": "range"
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum(count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" [1m]))",
+					"legendFormat": "Page views / min",
+					"queryType": "range"
+				},
+				{
+					"refId": "C",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "sum(rate(nginx_http_requests_total[2m])) * 60",
+					"legendFormat": "Requests / min",
+					"instant": false,
+					"range": true
+				}
+			],
+			"description": "Visits and page views (left axis) next to all HTTP requests (right axis), per minute",
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": [
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "Requests / min"
+						},
+						"properties": [
+							{
+								"id": "custom.axisPlacement",
+								"value": "right"
+							},
+							{
+								"id": "custom.lineStyle",
+								"value": {
+									"fill": "dash",
+									"dash": [
+										6,
+										4
+									]
+								}
+							},
+							{
+								"id": "custom.fillOpacity",
+								"value": 0
+							}
+						]
+					}
+				]
+			},
+			"options": {
+				"tooltip": {
+					"mode": "multi",
+					"sort": "desc"
+				},
+				"legend": {
+					"displayMode": "list",
+					"placement": "bottom"
+				}
+			}
+		},
+		{
+			"id": 9,
+			"type": "row",
+			"title": "What people use",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 14,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 10,
+			"type": "bargauge",
+			"title": "Most used parts of the site",
+			"gridPos": {
+				"x": 0,
+				"y": 15,
+				"w": 12,
+				"h": 9
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "topk(15, sum by (section) (count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | label_format section=`{{ regexReplaceAll \"^/(groups|countries)/.+\" .page \"/$1/…\" }}` [$__range])))",
+					"legendFormat": "{{section}}",
+					"queryType": "instant"
+				}
+			],
+			"description": "Page views per part of the site; all group pages and all country pages are counted together",
+			"options": {
+				"orientation": "horizontal",
+				"displayMode": "basic",
+				"showUnfilled": true,
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				}
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"unit": "short"
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 11,
+			"type": "bargauge",
+			"title": "Most viewed groups and countries",
+			"gridPos": {
+				"x": 12,
+				"y": 15,
+				"w": 12,
+				"h": 9
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "topk(15, sum by (page) (count_over_time({job=\"jotiglobe\"} | json | path=\"/hit\" | page=~\"/(groups|countries)/.+\" [$__range])))",
+					"legendFormat": "{{page}}",
+					"queryType": "instant"
+				}
+			],
+			"options": {
+				"orientation": "horizontal",
+				"displayMode": "basic",
+				"showUnfilled": true,
+				"reduceOptions": {
+					"calcs": [
+						"lastNotNull"
+					],
+					"values": false
+				}
+			},
+			"fieldConfig": {
+				"defaults": {
+					"color": {
+						"mode": "fixed",
+						"fixedColor": "#7fb48d"
+					},
+					"unit": "short"
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 12,
+			"type": "row",
+			"title": "Traffic",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 24,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 13,
+			"type": "timeseries",
+			"title": "Responses by status",
+			"gridPos": {
+				"x": 0,
+				"y": 25,
+				"w": 12,
+				"h": 8
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "sum by (status) (count_over_time({job=\"jotiglobe\"} | json | __error__=\"\" [1m]))",
+					"legendFormat": "{{status}}",
+					"queryType": "range"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			},
+			"options": {
+				"tooltip": {
+					"mode": "multi",
+					"sort": "desc"
+				}
+			}
+		},
+		{
+			"id": 14,
+			"type": "timeseries",
+			"title": "Response time",
+			"gridPos": {
+				"x": 12,
+				"y": 25,
+				"w": 12,
+				"h": 8
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.5, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [5m])",
+					"legendFormat": "median",
+					"queryType": "range"
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "quantile_over_time(0.95, {job=\"jotiglobe\"} | json | path!=\"/hit\" | unwrap duration [5m])",
+					"legendFormat": "p95",
+					"queryType": "range"
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "s",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			},
+			"options": {
+				"tooltip": {
+					"mode": "multi"
+				}
+			}
+		},
+		{
+			"id": 15,
+			"type": "row",
+			"title": "System",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 33,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 16,
+			"type": "timeseries",
+			"title": "CPU",
+			"gridPos": {
+				"x": 0,
+				"y": 34,
+				"w": 6,
+				"h": 8
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "100 * (1 - avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])))",
+					"legendFormat": "CPU used",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					},
+					"min": 0,
+					"max": 100
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 17,
+			"type": "timeseries",
+			"title": "Memory",
+			"gridPos": {
+				"x": 6,
+				"y": 34,
+				"w": 6,
+				"h": 8
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes",
+					"legendFormat": "used",
+					"instant": false,
+					"range": true
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "node_memory_MemTotal_bytes",
+					"legendFormat": "total",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "bytes",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					},
+					"min": 0
+				},
+				"overrides": [
+					{
+						"matcher": {
+							"id": "byName",
+							"options": "total"
+						},
+						"properties": [
+							{
+								"id": "custom.fillOpacity",
+								"value": 0
+							},
+							{
+								"id": "custom.lineStyle",
+								"value": {
+									"fill": "dash",
+									"dash": [
+										6,
+										4
+									]
+								}
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"id": 18,
+			"type": "timeseries",
+			"title": "Disk used",
+			"gridPos": {
+				"x": 12,
+				"y": 34,
+				"w": 6,
+				"h": 8
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "100 * (1 - node_filesystem_avail_bytes{mountpoint=\"/\"} / node_filesystem_size_bytes{mountpoint=\"/\"})",
+					"legendFormat": "/",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "percent",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					},
+					"min": 0,
+					"max": 100
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 19,
+			"type": "timeseries",
+			"title": "Network",
+			"gridPos": {
+				"x": 18,
+				"y": 34,
+				"w": 6,
+				"h": 8
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "sum(rate(node_network_receive_bytes_total{device!=\"lo\"}[5m]))",
+					"legendFormat": "in",
+					"instant": false,
+					"range": true
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "sum(rate(node_network_transmit_bytes_total{device!=\"lo\"}[5m]))",
+					"legendFormat": "out",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "Bps",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 20,
+			"type": "timeseries",
+			"title": "nginx connections",
+			"gridPos": {
+				"x": 0,
+				"y": 42,
+				"w": 12,
+				"h": 7
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "nginx_connections_active",
+					"legendFormat": "active",
+					"instant": false,
+					"range": true
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "nginx_connections_waiting",
+					"legendFormat": "waiting",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 21,
+			"type": "timeseries",
+			"title": "Load",
+			"gridPos": {
+				"x": 12,
+				"y": 42,
+				"w": 12,
+				"h": 7
+			},
+			"datasource": {
+				"type": "prometheus",
+				"uid": "jotiglobe-prom"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "node_load1",
+					"legendFormat": "1 min",
+					"instant": false,
+					"range": true
+				},
+				{
+					"refId": "B",
+					"datasource": {
+						"type": "prometheus",
+						"uid": "jotiglobe-prom"
+					},
+					"expr": "node_load5",
+					"legendFormat": "5 min",
+					"instant": false,
+					"range": true
+				}
+			],
+			"fieldConfig": {
+				"defaults": {
+					"unit": "short",
+					"custom": {
+						"lineWidth": 2,
+						"fillOpacity": 10,
+						"showPoints": "never",
+						"spanNulls": true
+					}
+				},
+				"overrides": []
+			}
+		},
+		{
+			"id": 22,
+			"type": "row",
+			"title": "Logs",
+			"collapsed": false,
+			"gridPos": {
+				"x": 0,
+				"y": 49,
+				"w": 24,
+				"h": 1
+			},
+			"panels": []
+		},
+		{
+			"id": 23,
+			"type": "logs",
+			"title": "Requests (anonymous log)",
+			"gridPos": {
+				"x": 0,
+				"y": 50,
+				"w": 24,
+				"h": 12
+			},
+			"datasource": {
+				"type": "loki",
+				"uid": "jotiglobe-loki"
+			},
+			"targets": [
+				{
+					"refId": "A",
+					"datasource": {
+						"type": "loki",
+						"uid": "jotiglobe-loki"
+					},
+					"expr": "{job=\"jotiglobe\"} | json | line_format \"{{.method}} {{.path}}{{if .page}} {{.page}}{{end}} → {{.status}} · {{.duration}}s\"",
+					"legendFormat": "",
+					"queryType": "range"
+				}
+			],
+			"options": {
+				"showTime": true,
+				"wrapLogMessage": false,
+				"sortOrder": "Descending",
+				"enableLogDetails": true
+			}
+		}
+	],
+	"templating": {
+		"list": []
+	},
+	"annotations": {
+		"list": []
+	}
+}

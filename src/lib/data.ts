@@ -3,30 +3,15 @@ import { countries } from './countries';
 
 type GroupsFile = { snapshot: string; fields: string[]; groups: [number, string, string, string, number, number, number][] };
 
-/** One JOTA-JOTI weekend. Listed in public/data/years.json; each year's files live in public/data/<year>/. */
 export type YearInfo = { year: number; start: string; end: string };
 
-/** Contacts logged in JOTI-kontakter, aggregated per country (scripts/export-contacts.py). Optional per year. */
-export type ContactStats = {
-	year: number;
-	groups_registered: number;
-	groups_logging: number;
-	contacts: number;
-	entries: number;
-	modes: Record<string, number>;
-	countries: Record<string, number>;
-	pairs: [string, string, number][];
-	days: Record<string, number>;
-};
 
-// Every file is same origin and cached per year, so moving between pages doesn't fetch it again.
 const cache = new Map<string, Promise<unknown>>();
 function get<T>(url: string, optional = false): Promise<T> {
 	if (!cache.has(url))
 		cache.set(
 			url,
 			fetch(url).then((r) => {
-				// a missing optional file: 404 from nginx, or the index.html fallback from the Vite dev server
 				if (optional && (r.status === 404 || !r.headers.get('content-type')?.includes('json'))) return null;
 				if (r.ok) return r.json();
 				throw new Error(`${url}: ${r.status}`);
@@ -35,31 +20,34 @@ function get<T>(url: string, optional = false): Promise<T> {
 	return cache.get(url) as Promise<T>;
 }
 
-/** All years with data, newest first */
 export async function loadYears() {
 	const d = await get<{ years: YearInfo[] }>('/data/years.json');
 	return [...d.years].sort((a, b) => b.year - a.year);
 }
 
-/** Loads a year's directory snapshot shipped with the site – same origin, nothing third-party. */
 export async function loadGroups(year: number) {
-	const d = await get<GroupsFile>(`/data/${year}/groups.json`);
+	const [d, key] = await Promise.all([get<GroupsFile>(`/data/${year}/groups.json`), loadKeys(year)]);
 	return {
 		snapshot: d.snapshot,
-		groups: d.groups.map(([id, name, city, cc, lat, lon, approx]) => ({ id, name, city, cc, lat, lon, approx: !!approx }) as Group)
+		groups: d.groups.map(([id, name, city, cc, lat, lon, approx]) => ({ id, key: key(id), name, city, cc, lat, lon, approx: !!approx }) as Group)
 	};
 }
 
-/** Group id → group JID, from the public group profiles. Missing for a year → empty. */
-export const loadJids = async (year: number) => (await get<Record<string, string> | null>(`/data/${year}/jids.json`, true)) ?? {};
+export type Profile = { jid: string; participants: number | null; org: string };
+export async function loadProfiles(year: number) {
+	const d = await get<{ groups: Record<string, [string, number | null, string]> } | null>(`/data/${year}/profiles.json`, true);
+	const m = new Map<number, Profile>();
+	for (const [id, [jid, participants, org]] of Object.entries(d?.groups ?? {})) m.set(+id, { jid, participants, org });
+	return m;
+}
 
-export const loadContacts = (year: number) => get<ContactStats | null>(`/data/${year}/contacts.json`, true);
+async function loadKeys(year: number) {
+	const d = (await get<Record<string, number> | null>(`/data/${year}/keys.json`, true)) ?? {};
+	return (id: number) => d[id] ?? id;
+}
 
-/** Public profile of a group on jotajoti.info. Only a link – the site never fetches it. */
-export const groupUrl = (id: number) => `https://jotajoti.info/scouts_group/${id}`;
 
-/** Our own page for a group: /groups/<name>-<id>. The id at the end is what counts; the name is for people and search engines. */
-export function groupPath(g: { id: number; name: string }) {
+export function groupPath(g: { key: number; name: string }) {
 	const slug = g.name
 		.normalize('NFKD')
 		.replace(/[̀-ͯ]/g, '')
@@ -68,14 +56,13 @@ export function groupPath(g: { id: number; name: string }) {
 		.replace(/^-+|-+$/g, '')
 		.slice(0, 60)
 		.replace(/-+$/, '');
-	return `/groups/${slug ? `${slug}-` : ''}${g.id}`;
+	return `/groups/${slug ? `${slug}-` : ''}${g.key}`;
 }
-export const groupIdFromPath = (path: string) => {
+export const groupKeyFromPath = (path: string) => {
 	const m = /^\/groups\/(?:.*-)?(\d+)\/?$/.exec(path);
 	return m ? +m[1] : null;
 };
 
-/** WOSM region, from the first digit of a group JID */
 export const wosmRegions: Record<string, string> = {
 	'1': 'Africa',
 	'2': 'Arab',
@@ -108,7 +95,6 @@ export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lo
 
 export const fmt = (n: number) => n.toLocaleString('en-GB');
 export const fmtDate = (iso: string) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-/** "16–18 October 2026" */
 export function fmtWeekend(y: YearInfo) {
 	const s = new Date(y.start),
 		e = new Date(y.end);

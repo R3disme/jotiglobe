@@ -2,7 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import ScoutGlobe, { type Group } from './lib/scout-globe.svelte';
 	import PrivacyNotice from './lib/PrivacyNotice.svelte';
-	import { loadYears, loadGroups, groupPath, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
+	import { loadYears, loadGroups, loadProfiles, groupPath, fmt, countryName, countryRegion, distanceKm, fmtDate, fmtWeekend, type YearInfo } from './lib/data';
 	import { route, navigate, setParams } from './lib/router.svelte';
 	import { cn } from './lib/utils';
 	import Search from '@lucide/svelte/icons/search';
@@ -23,7 +23,6 @@
 	let loading = $state(true);
 	let loadError = $state(false);
 	let years = $state<YearInfo[]>([]);
-	// ?year= picks an older year; without it the globe shows the newest one
 	const year = $derived(years.find((y) => String(y.year) === new URLSearchParams(route.search).get('year')) ?? years[0] ?? null);
 	onMount(async () => {
 		try {
@@ -33,12 +32,14 @@
 			loading = false;
 		}
 	});
+	let participants = $state(new Map<number, number>()); // directory id → participants, when the year has profiles
 	let firstLoad = true;
 	$effect(() => {
 		const y = year?.year;
 		if (y == null) return;
 		let stale = false;
 		loading = true;
+		loadProfiles(y).then((p) => !stale && (participants = new Map([...p].map(([id, x]) => [id, x.participants ?? 0]))));
 		loadGroups(y)
 			.then((d) => {
 				if (stale) return;
@@ -87,6 +88,8 @@
 	let sheetOpen = $state(false); // mobile bottom sheet: expanded or not
 	let panelOpen = $state(true); // closed = just the globe
 
+	const countryParticipants = $derived(selected ? (perCountry.get(selected) ?? []).reduce((a, g) => a + (participants.get(g.id) ?? 0), 0) : 0);
+
 	// picking a country on the globe brings the list back
 	$effect(() => {
 		if (selected) panelOpen = true;
@@ -106,7 +109,6 @@
 	});
 
 	const openGroup = (g: Group) => navigate(groupPath(g));
-	// the chosen country is kept in the URL, so links can point at it and "back" from a group page returns to it
 	$effect(() => {
 		if (!loading) setParams({ country: selected });
 	});
@@ -295,7 +297,9 @@
 					<span class="fi fi-{selected.toLowerCase()} !h-9 !w-12 shrink-0 rounded-sm shadow-[0_0_0_1px_rgb(255_255_255/0.15)]"></span>
 					<div>
 						<h2 class="text-xl font-semibold">{names[selected]}</h2>
-						<p class="text-sand/60 text-sm">{perCountry.get(selected)?.length ?? 0} registered groups</p>
+						<p class="text-sand/60 text-sm">
+							{perCountry.get(selected)?.length ?? 0} registered groups{#if countryParticipants} · {fmt(countryParticipants)} participants{/if}
+						</p>
 					</div>
 				</div>
 				<p class="text-sand/50 text-xs">Click a group to find it on the map, then open its page for the JID and a link to jotajoti.info.</p>
@@ -325,7 +329,7 @@
 							<span class="min-w-0 flex-1">
 								<span class="block text-sm leading-snug font-medium">{g.name}</span>
 								<span class="text-sand/55 flex items-center gap-1 text-xs">
-									<MapPin class="size-3" />{g.city || 'Unknown place'}{#if g.approx}<span class="opacity-70"> · approximate on the map</span>{/if}
+									<MapPin class="size-3" />{g.city || 'Unknown place'}{#if participants.get(g.id)} · {fmt(participants.get(g.id)!)} participants{/if}{#if g.approx}<span class="opacity-70"> · approximate on the map</span>{/if}
 								</span>
 							</span>
 							<a
