@@ -32,9 +32,14 @@ JOTA-JOTI site and is not affiliated with WOSM.
 
 ## Using JotiGlobe in your own project
 
-You're welcome to. The code is under the MIT licence with one extra condition: anything public that uses JotiGlobe or
-its code must say so where people can see it, for example "Based on JotiGlobe" with a link to this repository. See
-[LICENSE](LICENSE).
+You're welcome to. The code is under the MIT licence with a few extra conditions (see [LICENSE](LICENSE)):
+
+- Anything public that uses JotiGlobe or its code must say so where people can see it, for example
+  "Based on JotiGlobe" with a link to this repository.
+- If you keep a copy or your own version private, [open an issue](https://github.com/R3disme/jotiglobe/issues) to let
+  us know it exists, what it is and why it's private. JotiGlobe was made for all scouts, so keeping the code private
+  just to avoid sharing it isn't a good enough reason. The World Scout Bureau (JOTA-JOTI) and ScoutWired may keep
+  private copies, as long as they tell us and keep the credit.
 
 ## Contributing or running it yourself
 
